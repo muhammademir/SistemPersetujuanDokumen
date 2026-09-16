@@ -1,0 +1,16 @@
+cat > .gitignore << 'EOF'
+# Backend (Laravel)
+backend/vendor/
+backend/.env
+backend/storage/*.key
+backend/public/storage
+
+# Frontend (Vue)
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+
+# OS/editor
+.DS_Store
+.vscode/
+EOF
