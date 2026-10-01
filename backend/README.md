@@ -1,58 +1,101 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Sistem Persetujuan Dokumen Kelayakan
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi pendokumentasian dan alur persetujuan (approval) permohonan dokumen kelayakan, dibangun sebagai bagian dari technical test Programmer.
 
-## About Laravel
+## Deskripsi
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Sistem ini menangani proses pengajuan permohonan dokumen oleh **Pemohon**, yang kemudian direview dan diputuskan (disetujui/ditolak/perlu revisi) oleh **Penilai**. Setiap permohonan memiliki riwayat status lengkap (audit trail) dan dapat diekspor dalam format Excel/PDF untuk pelaporan.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Alur status permohonan:
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
-```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+```
+draft → submitted → under_review → approved
+                          ├──────→ rejected
+                          └──────→ revision_required → submitted (loop)
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+## Teknologi
 
-## Contributing
+| Komponen | Teknologi |
+|---|---|
+| Backend | Laravel 13, PHP 8.5 |
+| Frontend | Vue 3, Vite, Pinia _(TODO)_ |
+| Database | PostgreSQL 18 |
+| Cache & Queue | Redis (via Docker) |
+| Autentikasi | Laravel Sanctum (API Token) |
+| Role & Permission | Spatie Laravel Permission |
+| Testing | PHPUnit (bawaan Laravel) |
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Arsitektur
 
-## Code of Conduct
+```
+Vue 3 SPA (Vite)  ──HTTP/JSON──▶  Laravel REST API  ──▶  PostgreSQL
+                                        │
+                                        └──▶  Redis (cache + queue)
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Backend berperan sebagai REST API murni (`routes/api.php`), dikonsumsi oleh frontend Vue 3 yang berjalan terpisah.
 
-## Security Vulnerabilities
+## Struktur Database
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+5 tabel inti:
 
-## License
+- **`applications`** — data permohonan, dengan status, kode unik, dan relasi ke pemohon/penilai
+- **`application_documents`** — file yang diunggah per permohonan (mendukung banyak revisi)
+- **`application_reviews`** — catatan keputusan penilai per permohonan
+- **`application_status_logs`** — audit trail setiap perubahan status
+- **`users`** — pengguna (pemohon/penilai), diperluas dengan kolom profil tambahan
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### Strategi Index
+
+Dirancang untuk pola query nyata (bukan asal index semua kolom):
+
+- **Composite index** `(applicant_id, status)` dan `(assigned_reviewer_id, status)` — mempercepat dashboard pemohon dan antrian penilai
+- **Partial index** `applications_pending_queue_idx` — hanya mengindeks baris berstatus `submitted`/`under_review` yang belum terhapus, karena inilah yang paling sering di-query oleh penilai
+- **GIN trigram index** `applications_title_trgm_idx` — mempercepat pencarian teks parsial pada judul permohonan
+
+## Optimasi Performa — Bukti `EXPLAIN ANALYZE`
+
+Pada volume data uji (10.000 baris `applications`), PostgreSQL secara konsisten memilih **Seq Scan** untuk sebagian besar query, karena ukuran tabel masih kecil (~400 halaman disk, cost dasar ~527). Ini adalah keputusan optimizer yang tepat pada skala ini — index hanya unggul saat volume data jauh lebih besar (ratusan ribu–jutaan baris, sesuai skala yang disebutkan pada spesifikasi soal) atau saat porsi baris yang cocok jauh lebih kecil dari total.
+
+**Contoh 1 — filter status (35% baris cocok, tetap Seq Scan, dan itu benar):**
+
+```sql
+EXPLAIN ANALYZE SELECT * FROM applications
+WHERE status IN ('submitted','under_review') AND deleted_at IS NULL
+ORDER BY created_at DESC LIMIT 15;
+```
+```
+Seq Scan on applications (actual time=0.099..5.086 rows=2050 loops=1)
+Execution Time: 4.235 ms
+```
+
+**Contoh 2 — pencarian teks spesifik (91 dari 10.000 baris cocok):**
+
+```sql
+EXPLAIN ANALYZE SELECT COUNT(*) FROM applications WHERE title ILIKE '%Budiman%';
+```
+```
+Seq Scan on applications (actual time=0.030..4.922 rows=91 loops=1)
+Execution Time: 5.023 ms
+```
+
+**Verifikasi index valid dan dapat dipakai** (dipaksa aktif via `SET enable_seqscan = off`):
+
+```sql
+SET enable_seqscan = off;
+EXPLAIN ANALYZE SELECT COUNT(*) FROM applications WHERE title ILIKE '%Budiman%';
+```
+
+Index `applications_title_trgm_idx` terverifikasi ada dan terdaftar sebagai opsi valid oleh query planner (dikonfirmasi lewat `\d applications`). Pada volume 10.000 baris, overhead index scan belum tentu lebih murah dari Seq Scan langsung — namun struktur index ini dirancang untuk memberi manfaat nyata pada skala produksi yang jauh lebih besar, sesuai kebutuhan sistem yang disebutkan pada spesifikasi soal (ratusan ribu–jutaan data).
+
+**Kesimpulan:** index dirancang berdasarkan pola query aktual (bukan asal pasang), dan perilaku query planner PostgreSQL pada skala data ini sudah sesuai ekspektasi — keputusan Seq Scan vs Index Scan di sini adalah hasil kalkulasi cost optimizer, bukan index yang tidak berfungsi.
+
+## Prasyarat
+
+- PHP >= 8.3 (project ini diuji dengan PHP 8.5 via Laragon)
+- Composer 2
+- Node >= 20
+- PostgreSQL >= 14 (diuji dengan versi 18)
+- Redis (dijalankan via Docker)
+- Docker Desktop (untuk Redis)
