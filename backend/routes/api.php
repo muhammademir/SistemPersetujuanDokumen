@@ -8,10 +8,11 @@ use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ExportController;
+use App\Http\Resources\UserResource;
 
 
 Route::get('/user', function (Request $request) {
-    return $request->user();
+    return new UserResource($request->user()->load('roles'));
 })->middleware('auth:sanctum');
 
 Route::prefix('v1')->group(function () {

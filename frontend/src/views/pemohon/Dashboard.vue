@@ -1,96 +1,204 @@
 <template>
-  <div class="max-w-[1200px] mx-auto">
-    <!-- Hero -->
-    <div class="bg-surface-dark text-on-dark p-8 rounded-sm flex items-start justify-between gap-6 flex-wrap mb-6 animate-fade-in-up">
+  <div class="max-w-[1240px] mx-auto flex flex-col gap-6">
+    <!-- Hero Banner -->
+    <div class="bg-surface-dark text-on-dark p-6 sm:p-8 rounded-sm flex items-start justify-between gap-6 flex-wrap animate-fade-in-up border border-hairline-strong">
       <div>
-        <div class="w-3 h-3 bg-primary mb-4"></div>
-        <h1 class="font-brand text-2xl font-bold leading-snug mb-2">
+        <div class="w-3 h-3 bg-primary mb-3"></div>
+        <h1 class="font-brand text-2xl sm:text-3xl font-bold leading-tight mb-2">
           Selamat Datang, <span class="text-primary">{{ authStore.userName }}</span>
         </h1>
-        <p class="text-sm text-on-dark-mute max-w-[500px] leading-relaxed">
-          Kelola pengajuan dokumen Anda dari dashboard ini. Pantau status persetujuan secara real-time.
+        <p class="text-sm text-on-dark-mute max-w-[540px] leading-relaxed">
+          Sistem Terpadu Permohonan Dokumen Kelayakan. Pantau status pengajuan Anda dari proses verifikasi administrasi hingga persetujuan akhir.
         </p>
       </div>
-      <router-link to="/pemohon/submit"
-        class="inline-flex items-center gap-2 h-11 px-6 bg-primary text-ink border-none rounded-sm font-brand text-sm font-bold no-underline transition-colors hover:bg-primary-dark whitespace-nowrap flex-shrink-0">
-        <Icon icon="mdi:plus" class="text-lg" />
-        <span>Ajukan Dokumen Baru</span>
+      <router-link
+        to="/pemohon/submit"
+        class="inline-flex items-center gap-2 h-11 px-6 bg-primary text-ink border-none rounded-sm font-brand text-sm font-bold no-underline transition-all hover:bg-primary-dark whitespace-nowrap flex-shrink-0 shadow-md hover:scale-[1.02]"
+      >
+        <Icon icon="mdi:plus-circle" class="text-lg" />
+        <span>Buat Permohonan Baru</span>
       </router-link>
     </div>
 
-    <!-- Stats -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <StatCard v-for="(s, i) in statCards" :key="s.label" v-bind="s" :class="['animate-fade-in-up', `delay-${(i+1)*100}`]" />
+    <!-- Feedback Alerts -->
+    <div v-if="alertMessage" class="flex items-center justify-between gap-3 p-4 bg-primary/10 border border-primary/30 rounded-sm text-sm text-success-deep animate-fade-in">
+      <div class="flex items-center gap-2">
+        <Icon icon="mdi:check-circle" class="text-lg text-primary flex-shrink-0" />
+        <span>{{ alertMessage }}</span>
+      </div>
+      <button @click="alertMessage = ''" class="bg-transparent border-none text-ink cursor-pointer hover:opacity-70">
+        <Icon icon="mdi:close" />
+      </button>
     </div>
 
-    <!-- Chart + Activity -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-      <!-- Chart -->
-      <div class="relative overflow-hidden bg-canvas border border-hairline rounded-sm p-6">
+    <!-- Quick Stats Cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div
+        v-for="(card, i) in statCards"
+        :key="card.label"
+        class="bg-canvas border border-hairline rounded-sm p-4 flex flex-col justify-between hover:border-primary transition-all relative overflow-hidden"
+      >
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-mute">{{ card.label }}</span>
+          <Icon :icon="card.icon" class="text-lg" :class="card.colorClass" />
+        </div>
+        <div class="font-brand text-2xl font-bold" :class="card.colorClass">
+          {{ card.value }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart + Activity Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Donut Chart -->
+      <div class="bg-canvas border border-hairline rounded-sm p-6 relative overflow-hidden flex flex-col">
         <div class="absolute top-0 left-0 w-3 h-3 bg-primary"></div>
-        <h2 class="font-brand text-lg font-bold text-ink">Statistik Dokumen</h2>
-        <div class="mt-4">
-          <apexchart v-if="chartReady" type="donut" height="280" :options="chartOptions" :series="chartSeries" />
-          <div v-else class="flex flex-col items-center justify-center h-[200px] text-mute text-sm gap-2">
-            <Icon icon="mdi:chart-donut" class="text-3xl" />
-            <span>Memuat grafik...</span>
+        <h2 class="font-brand text-base font-bold text-ink mb-1">Distribusi Status Permohonan</h2>
+        <p class="text-xs text-mute mb-4">Proporsi status pengajuan aktif Anda</p>
+        
+        <div class="flex-1 flex items-center justify-center min-h-[220px]">
+          <apexchart
+            v-if="chartReady && docStore.stats.total > 0"
+            type="donut"
+            width="100%"
+            height="240"
+            :options="chartOptions"
+            :series="chartSeries"
+          />
+          <div v-else class="flex flex-col items-center justify-center text-mute text-xs gap-2 py-8">
+            <Icon icon="mdi:chart-arc" class="text-3xl" />
+            <span>Belum ada data untuk ditampilkan</span>
           </div>
         </div>
       </div>
 
-      <!-- Activity -->
-      <div class="relative overflow-hidden bg-canvas border border-hairline rounded-sm p-6">
-        <div class="absolute bottom-0 right-0 w-3 h-3 bg-primary"></div>
-        <h2 class="font-brand text-lg font-bold text-ink">Aktivitas Terbaru</h2>
-        <div class="mt-4 flex flex-col">
-          <div v-for="doc in recentActivity" :key="doc.id" class="flex items-center gap-3 py-3 border-b border-hairline last:border-b-0">
-            <span class="w-2 h-2 rounded-full flex-shrink-0" :class="dotColor(doc.status)"></span>
-            <div class="flex-1 min-w-0 flex flex-col">
-              <span class="text-xs font-semibold text-ink truncate">{{ doc.title }}</span>
-              <span class="text-[11px] text-mute mt-0.5">{{ formatRelativeTime(doc.updated_at) }}</span>
-            </div>
-            <StatusBadge :status="doc.status" />
+      <!-- Recent Status Activity -->
+      <div class="lg:col-span-2 bg-canvas border border-hairline rounded-sm p-6 relative overflow-hidden flex flex-col">
+        <div class="absolute top-0 right-0 w-3 h-3 bg-primary"></div>
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="font-brand text-base font-bold text-ink mb-0.5">Permohonan Terbaru & Riwayat</h2>
+            <p class="text-xs text-mute">Aktivitas pembaharuan dokumen permohonan Anda</p>
           </div>
-          <div v-if="!recentActivity.length" class="flex flex-col items-center gap-2 py-8 text-mute text-sm">
-            <Icon icon="mdi:inbox-outline" class="text-2xl" />
-            <span>Belum ada aktivitas</span>
+          <span class="text-xs text-mute font-medium">{{ docStore.applications.length }} Total</span>
+        </div>
+
+        <div class="flex-1 flex flex-col divide-y divide-hairline">
+          <div
+            v-for="app in docStore.recentApplications.slice(0, 5)"
+            :key="app.id"
+            class="py-3 flex items-center justify-between gap-3 hover:bg-surface-soft/60 px-2 -mx-2 rounded transition-colors cursor-pointer"
+            @click="openDetail(app)"
+          >
+            <div class="flex items-center gap-3 min-w-0">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-surface-soft border border-hairline text-ink">
+                {{ app.document_type }}
+              </span>
+              <div class="flex flex-col min-w-0">
+                <span class="text-xs font-bold text-ink truncate">{{ app.title }}</span>
+                <span class="text-[11px] text-mute flex items-center gap-1">
+                  <span class="font-mono">{{ app.code }}</span> · {{ formatRelativeTime(app.updated_at || app.created_at) }}
+                </span>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 flex-shrink-0">
+              <StatusBadge :status="app.status" />
+              <button class="text-primary text-xs font-bold bg-transparent border-none cursor-pointer">
+                Detail →
+              </button>
+            </div>
+          </div>
+
+          <div v-if="!docStore.applications.length" class="flex flex-col items-center justify-center py-12 text-mute text-xs gap-2">
+            <Icon icon="mdi:inbox-outline" class="text-3xl" />
+            <span>Belum ada permohonan yang diajukan</span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Document list -->
-    <div>
-      <div class="flex items-center justify-between flex-wrap gap-4 mb-4">
-        <h2 class="font-brand text-lg font-bold text-ink">Dokumen Saya</h2>
-        <div class="flex gap-1 overflow-x-auto">
-          <button v-for="tab in filterTabs" :key="tab.value" @click="activeFilter = tab.value"
-            class="inline-flex items-center gap-1.5 px-4 py-2 border-none rounded-sm font-brand text-xs font-bold cursor-pointer transition-all whitespace-nowrap"
-            :class="activeFilter === tab.value ? 'bg-ink text-on-dark' : 'bg-transparent text-ink hover:bg-surface-soft'">
-            {{ tab.label }}
-            <span v-if="tab.count" class="text-[11px] px-1.5 py-0.5 rounded-full" :class="activeFilter === tab.value ? 'bg-white/20' : 'bg-black/10'">{{ tab.count }}</span>
-          </button>
+    <!-- Application List with Filter and Search -->
+    <div class="bg-canvas border border-hairline rounded-sm p-6 flex flex-col gap-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="font-brand text-lg font-bold text-ink">Daftar Semua Permohonan</h2>
+          <p class="text-xs text-mute">Kelola dan pantau seluruh permohonan dokumen yang Anda daftarkan</p>
+        </div>
+
+        <!-- Search & Filter Controls -->
+        <div class="flex items-center gap-2 flex-wrap">
+          <div class="relative min-w-[220px]">
+            <Icon icon="mdi:magnify" class="absolute left-3 top-1/2 -translate-y-1/2 text-mute text-base" />
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Cari judul permohonan..."
+              class="w-full h-9 pl-9 pr-3 bg-surface-soft border border-hairline rounded-sm text-xs text-ink outline-none focus:border-primary transition-colors"
+            />
+          </div>
+
+          <select
+            v-model="selectedType"
+            class="h-9 px-3 bg-surface-soft border border-hairline rounded-sm text-xs text-ink outline-none focus:border-primary transition-colors"
+          >
+            <option value="">Semua Jenis</option>
+            <option value="SLF">SLF</option>
+            <option value="AMDAL">AMDAL</option>
+            <option value="IMB">IMB</option>
+            <option value="UKL-UPL">UKL-UPL</option>
+            <option value="SIUP">SIUP</option>
+          </select>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <DocumentCard v-for="(doc, i) in filteredDocuments" :key="doc.id" :document="doc"
-          :action-label="doc.status === 'revision' ? 'Perbaiki' : 'Lihat Detail'"
-          :class="['animate-fade-in-up', `delay-${(i%4+1)*100}`]"
-          @action="handleDocAction(doc)" />
+      <!-- Status Tabs -->
+      <div class="flex gap-1.5 overflow-x-auto pb-1 border-b border-hairline text-xs">
+        <button
+          v-for="tab in filterTabs"
+          :key="tab.value"
+          @click="activeStatusFilter = tab.value"
+          class="inline-flex items-center gap-1.5 px-3 py-2 border-b-2 font-bold cursor-pointer transition-all whitespace-nowrap"
+          :class="activeStatusFilter === tab.value ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-mute hover:text-ink hover:bg-surface-soft'"
+        >
+          <span>{{ tab.label }}</span>
+          <span class="px-1.5 py-0.2 rounded-full text-[10px]" :class="activeStatusFilter === tab.value ? 'bg-primary text-ink' : 'bg-surface-soft text-mute'">
+            {{ tab.count }}
+          </span>
+        </button>
       </div>
 
-      <!-- Empty state -->
-      <div v-if="!filteredDocuments.length" class="flex flex-col items-center gap-3 py-16 px-6 bg-canvas border border-dashed border-hairline rounded-sm text-center">
-        <Icon icon="mdi:file-document-outline" class="text-5xl text-mute" />
-        <h3 class="text-lg font-bold text-ink">Belum ada dokumen</h3>
-        <p class="text-sm text-mute max-w-[360px]">Mulai ajukan dokumen baru untuk memulai proses persetujuan.</p>
-        <router-link to="/pemohon/submit"
-          class="inline-flex items-center h-11 px-6 mt-2 bg-transparent border-2 border-primary rounded-sm font-brand text-sm font-bold text-ink no-underline transition-all hover:bg-primary">
-          + Ajukan Dokumen
+      <!-- Grid Cards -->
+      <div v-if="filteredApplications.length" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
+        <DocumentCard
+          v-for="app in filteredApplications"
+          :key="app.id"
+          :application="app"
+          @click="openDetail(app)"
+          @action="handleCardAction(app)"
+        />
+      </div>
+
+      <!-- Empty Filter State -->
+      <div v-else class="flex flex-col items-center justify-center py-16 px-4 bg-surface-soft/40 border border-dashed border-hairline rounded-sm text-center">
+        <Icon icon="mdi:folder-open-outline" class="text-4xl text-mute mb-2" />
+        <h3 class="text-sm font-bold text-ink">Tidak ada permohonan yang sesuai filter</h3>
+        <p class="text-xs text-mute max-w-[340px] mt-1 mb-4">Coba sesuaikan kata kunci pencarian atau pilih tab status yang lain.</p>
+        <router-link
+          to="/pemohon/submit"
+          class="inline-flex items-center gap-1.5 h-9 px-4 bg-primary text-ink font-bold text-xs rounded-sm no-underline hover:bg-primary-dark transition-colors"
+        >
+          <Icon icon="mdi:plus" /> Buat Permohonan Baru
         </router-link>
       </div>
     </div>
+
+    <!-- Application Detail Modal -->
+    <ApplicationDetailModal
+      v-model="showDetailModal"
+      :application="selectedApplication"
+      @submit-app="handleSubmitApplication"
+      @edit-app="handleEditApplication"
+    />
   </div>
 </template>
 
@@ -100,70 +208,139 @@ import { useRouter } from 'vue-router'
 import { Icon } from '@iconify/vue'
 import { useAuthStore } from '@/stores/auth'
 import { useDocumentStore } from '@/stores/document'
-import StatCard from '@/components/StatCard.vue'
-import StatusBadge from '@/components/StatusBadge.vue'
 import DocumentCard from '@/components/DocumentCard.vue'
-import type { Document } from '@/types'
+import StatusBadge from '@/components/StatusBadge.vue'
+import ApplicationDetailModal from '@/components/ApplicationDetailModal.vue'
+import type { Application } from '@/types'
 
 const authStore = useAuthStore()
 const docStore = useDocumentStore()
 const router = useRouter()
 
-const activeFilter = ref('all')
+const activeStatusFilter = ref('all')
+const searchQuery = ref('')
+const selectedType = ref('')
 const chartReady = ref(false)
+const alertMessage = ref('')
+
+const showDetailModal = ref(false)
+const selectedApplication = ref<Application | null>(null)
 
 const statCards = computed(() => [
-  { value: docStore.stats.total, label: 'Total Dokumen', icon: 'mdi:folder-outline', variant: 'primary' as const, subtitle: 'Semua dokumen' },
-  { value: docStore.stats.pending, label: 'Menunggu', icon: 'mdi:clock-outline', variant: 'warning' as const, subtitle: 'Perlu ditinjau' },
-  { value: docStore.stats.approved, label: 'Disetujui', icon: 'mdi:check-circle-outline', variant: 'success' as const, subtitle: 'Berhasil' },
-  { value: docStore.stats.revision + docStore.stats.rejected, label: 'Perlu Tindakan', icon: 'mdi:flash-outline', variant: 'danger' as const, subtitle: 'Revisi & Ditolak' },
+  { label: 'Total', value: docStore.stats.total, icon: 'mdi:folder-outline', colorClass: 'text-ink' },
+  { label: 'Draft', value: docStore.stats.draft, icon: 'mdi:file-edit-outline', colorClass: 'text-stone' },
+  { label: 'Menunggu', value: docStore.stats.submitted, icon: 'mdi:clock-outline', colorClass: 'text-warning' },
+  { label: 'Ditinjau', value: docStore.stats.under_review, icon: 'mdi:file-search-outline', colorClass: 'text-info' },
+  { label: 'Revisi', value: docStore.stats.revision_required, icon: 'mdi:pencil-ruler', colorClass: 'text-orange-500' },
+  { label: 'Disetujui', value: docStore.stats.approved, icon: 'mdi:check-circle-outline', colorClass: 'text-emerald-600' },
 ])
 
 const filterTabs = computed(() => [
   { label: 'Semua', value: 'all', count: docStore.stats.total },
-  { label: 'Menunggu', value: 'pending', count: docStore.stats.pending },
+  { label: 'Draft', value: 'draft', count: docStore.stats.draft },
+  { label: 'Menunggu Verifikasi', value: 'submitted', count: docStore.stats.submitted },
+  { label: 'Sedang Ditinjau', value: 'under_review', count: docStore.stats.under_review },
+  { label: 'Perlu Revisi', value: 'revision_required', count: docStore.stats.revision_required },
   { label: 'Disetujui', value: 'approved', count: docStore.stats.approved },
-  { label: 'Revisi', value: 'revision', count: docStore.stats.revision },
   { label: 'Ditolak', value: 'rejected', count: docStore.stats.rejected },
 ])
 
-const filteredDocuments = computed(() => {
-  if (activeFilter.value === 'all') return docStore.documents
-  return docStore.documents.filter(d => d.status === activeFilter.value)
+const filteredApplications = computed(() => {
+  return docStore.applications.filter(app => {
+    const statusVal = typeof app.status === 'object' ? app.status.value : app.status
+    const matchesStatus = activeStatusFilter.value === 'all' || statusVal === activeStatusFilter.value
+    const matchesSearch = !searchQuery.value.trim() ||
+      app.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      app.code.toLowerCase().includes(searchQuery.value.toLowerCase())
+    const matchesType = !selectedType.value || app.document_type === selectedType.value
+    return matchesStatus && matchesSearch && matchesType
+  })
 })
 
-const recentActivity = computed(() => docStore.recentDocuments.slice(0, 5))
+const chartSeries = computed(() => [
+  docStore.stats.draft,
+  docStore.stats.submitted,
+  docStore.stats.under_review,
+  docStore.stats.revision_required,
+  docStore.stats.approved,
+  docStore.stats.rejected,
+])
 
-const chartSeries = computed(() => [docStore.stats.pending, docStore.stats.approved, docStore.stats.revision, docStore.stats.rejected])
 const chartOptions = computed(() => ({
   chart: { type: 'donut', fontFamily: 'Inter, Arial, sans-serif', background: 'transparent' },
-  labels: ['Menunggu', 'Disetujui', 'Revisi', 'Ditolak'],
-  colors: ['#df6500', '#76b900', '#ef9100', '#e52020'],
-  stroke: { width: 2, colors: ['#ffffff'] },
-  plotOptions: { pie: { donut: { size: '65%', labels: { show: true, name: { fontSize: '14px', fontWeight: 700 }, value: { fontSize: '24px', fontWeight: 700, color: '#1a1a1a' }, total: { show: true, label: 'Total', fontSize: '13px', fontWeight: 700, color: '#757575' } } } } },
+  labels: ['Draft', 'Menunggu Verifikasi', 'Sedang Ditinjau', 'Perlu Revisi', 'Disetujui', 'Ditolak'],
+  colors: ['#78716c', '#df6500', '#0284c7', '#ea580c', '#10b981', '#ef4444'],
+  stroke: { width: 1.5, colors: ['#ffffff'] },
+  plotOptions: {
+    pie: {
+      donut: {
+        size: '65%',
+        labels: {
+          show: true,
+          total: {
+            show: true,
+            label: 'Total',
+            fontSize: '13px',
+            fontWeight: 700,
+            color: '#757575',
+          },
+        },
+      },
+    },
+  },
   dataLabels: { enabled: false },
-  legend: { position: 'bottom', fontSize: '13px', fontWeight: 600, markers: { size: 8, shape: 'square' }, itemMargin: { horizontal: 12, vertical: 4 } },
+  legend: { position: 'bottom', fontSize: '11px', itemMargin: { horizontal: 6, vertical: 3 } },
 }))
 
-function dotColor(status: string) {
-  return { 'bg-warning': status === 'pending', 'bg-primary': status === 'approved', 'bg-warning-bright': status === 'revision', 'bg-error': status === 'rejected', 'bg-stone': status === 'draft' }
-}
-
 function formatRelativeTime(dateStr: string): string {
+  if (!dateStr) return '-'
   const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000)
   if (diff < 60) return 'Baru saja'
-  if (diff < 3600) return `${Math.floor(diff / 60)} menit lalu`
+  if (diff < 3600) return `${Math.floor(diff / 60)} mnt lalu`
   if (diff < 86400) return `${Math.floor(diff / 3600)} jam lalu`
   if (diff < 604800) return `${Math.floor(diff / 86400)} hari lalu`
   return new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
 }
 
-function handleDocAction(doc: Document) {
-  if (doc.status === 'revision') router.push(`/pemohon/submit?edit=${doc.id}`)
+async function openDetail(app: Application) {
+  await docStore.fetchApplication(app.id)
+  selectedApplication.value = docStore.currentApplication || app
+  showDetailModal.value = true
 }
 
-onMounted(() => {
-  docStore.fetchDocuments()
-  setTimeout(() => { chartReady.value = true }, 300)
+function handleCardAction(app: Application) {
+  const statusVal = typeof app.status === 'object' ? app.status.value : app.status
+  if (statusVal === 'revision_required') {
+    handleEditApplication(app)
+  } else if (statusVal === 'draft') {
+    handleSubmitApplication(app)
+  } else {
+    openDetail(app)
+  }
+}
+
+async function handleSubmitApplication(app: Application) {
+  try {
+    await docStore.submitApplication(app.id)
+    alertMessage.value = `Permohonan "${app.title}" (${app.code}) berhasil diajukan ke penilai!`
+    showDetailModal.value = false
+    await docStore.fetchDashboard()
+    await docStore.fetchApplications()
+  } catch {
+    // handled by store
+  }
+}
+
+function handleEditApplication(app: Application) {
+  showDetailModal.value = false
+  router.push(`/pemohon/submit?edit=${app.id}`)
+}
+
+onMounted(async () => {
+  await Promise.all([
+    docStore.fetchDashboard(),
+    docStore.fetchApplications(),
+  ])
+  setTimeout(() => { chartReady.value = true }, 200)
 })
 </script>

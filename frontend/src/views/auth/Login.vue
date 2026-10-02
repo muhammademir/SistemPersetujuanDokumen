@@ -59,6 +59,27 @@
         <span v-if="authStore.loading" class="w-4 h-4 border-2 border-transparent border-t-current rounded-full animate-spin"></span>
         <span>{{ authStore.loading ? 'Memproses...' : 'Masuk' }}</span>
       </button>
+
+      <!-- Quick Demo Login Buttons -->
+      <div class="mt-2 p-3.5 bg-surface-soft/80 border border-hairline rounded-sm flex flex-col gap-2">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-mute text-center">Akun Demo Cepat</span>
+        <div class="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            @click="fillDemo('pemohon')"
+            class="px-3 py-2 bg-canvas border border-hairline rounded-sm text-xs font-bold text-ink hover:border-primary hover:text-primary transition-all cursor-pointer flex items-center justify-center gap-1.5"
+          >
+            <Icon icon="mdi:account" class="text-sm" /> Demo Pemohon
+          </button>
+          <button
+            type="button"
+            @click="fillDemo('penilai')"
+            class="px-3 py-2 bg-canvas border border-hairline rounded-sm text-xs font-bold text-ink hover:border-primary hover:text-primary transition-all cursor-pointer flex items-center justify-center gap-1.5"
+          >
+            <Icon icon="mdi:shield-account" class="text-sm" /> Demo Penilai
+          </button>
+        </div>
+      </div>
     </form>
 
     <div class="flex items-center justify-center gap-1.5 mt-8 pt-6 border-t border-hairline">
@@ -83,6 +104,16 @@ const form = reactive<LoginCredentials>({
   email: '',
   password: '',
 })
+
+function fillDemo(role: 'pemohon' | 'penilai') {
+  if (role === 'pemohon') {
+    form.email = 'pemohon@demo.test'
+    form.password = 'password'
+  } else {
+    form.email = 'penilai@demo.test'
+    form.password = 'password'
+  }
+}
 
 async function handleLogin() {
   try {

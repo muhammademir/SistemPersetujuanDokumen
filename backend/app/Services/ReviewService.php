@@ -51,7 +51,11 @@ class ReviewService
                 'metadata'       => ['ip' => request()->ip()],
             ]);
 
-            Cache::tags(['dashboard'])->flush();
+            try {
+                Cache::tags(['dashboard'])->flush();
+            } catch (\Throwable $e) {
+                Cache::flush();
+            }
 
             return $application->fresh(['reviews', 'statusLogs']);
         });

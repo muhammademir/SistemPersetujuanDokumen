@@ -25,7 +25,7 @@ class ApplicationPolicy
         if ($this->isOwner($user, $application)) {
             return true;
         }
-        return $user->hasRole('penilai') && $application->status !== ApplicationStatus::DRAFT;
+        return $user->hasRole('penilai') && $application->status !== ApplicationStatus::Draft;
     }
 
     /**

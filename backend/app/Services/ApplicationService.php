@@ -17,7 +17,7 @@ class ApplicationService
      */
     public function create(User $applicant, array $data): Application
     {
-        return DB::transaction(function () use ($applicant, $data) {
+        $application = DB::transaction(function () use ($applicant, $data) {
             $application = Application::create([
                 'code'          => $this->generateCode(),
                 'applicant_id'  => $applicant->id,
@@ -37,6 +37,7 @@ class ApplicationService
 
             return $application;
         });
+
         $this->flushDashboardCache();
 
         return $application;
@@ -59,6 +60,8 @@ class ApplicationService
             'document_type' => $data['document_type'] ?? $application->document_type,
         ]);
 
+        $this->flushDashboardCache();
+
         return $application->fresh();
     }
 
@@ -67,7 +70,7 @@ class ApplicationService
      */
     public function submit(Application $application, User $actor): Application
     {
-        return DB::transaction(function () use ($application, $actor) {
+        $application = DB::transaction(function () use ($application, $actor) {
             $application = Application::lockForUpdate()->findOrFail($application->id);
 
             $from = $application->status;
@@ -94,12 +97,12 @@ class ApplicationService
                     : 'Permohonan diajukan oleh pemohon.',
             ]);
 
-
             return $application;
         });
+
         $this->flushDashboardCache();
 
-        return $result->fresh();
+        return $application->fresh();
     }
 
     public function delete(Application $application): void
@@ -122,7 +125,7 @@ class ApplicationService
     {
         $year = now()->format('Y');
 
-         do {
+        do {
             $code = sprintf('PMH-%s-%06d', $year, random_int(1, 999999));
         } while (Application::withTrashed()->where('code', $code)->exists());
 
@@ -131,6 +134,10 @@ class ApplicationService
 
     private function flushDashboardCache(): void
     {
-        Cache::tags(['dashboard'])->flush();
+        try {
+            Cache::tags(['dashboard'])->flush();
+        } catch (\Throwable $e) {
+            Cache::flush();
+        }
     }
 }

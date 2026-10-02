@@ -5,32 +5,40 @@ import type { User, LoginCredentials, RegisterData } from '@/types'
 import router from '@/router'
 
 export const useAuthStore = defineStore('auth', () => {
-  // State hanya di memory (Pinia), BUKAN di localStorage
   const user = ref<User | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
-  const isReady = ref(false) // apakah sudah cek session
+  const isReady = ref(false)
 
   const isAuthenticated = computed(() => !!user.value)
   const isPemohon = computed(() => user.value?.role === 'pemohon')
   const isPenilai = computed(() => user.value?.role === 'penilai')
+  const userRole = computed(() => user.value?.role ?? 'pemohon')
   const userName = computed(() => user.value?.name ?? '')
   const userInitials = computed(() => {
     if (!user.value?.name) return '??'
-    const parts = user.value.name.split(' ')
+    const parts = user.value.name.trim().split(/\s+/)
     return parts.length >= 2
       ? (parts[0][0] + parts[1][0]).toUpperCase()
       : parts[0].substring(0, 2).toUpperCase()
   })
 
-  /**
-   * Cek session saat app init — panggil /api/user
-   * Jika cookie session masih valid, user akan terisi
-   */
+  function extractUser(data: any): User {
+    const raw = data?.user?.data ?? data?.user ?? data?.data ?? data
+    return {
+      id: raw.id,
+      name: raw.name,
+      email: raw.email,
+      role: raw.role ?? (Array.isArray(raw.roles) && raw.roles[0]?.name ? raw.roles[0].name : raw.roles?.[0]) ?? 'pemohon',
+      roles: raw.roles ?? [],
+      is_active: raw.is_active,
+    }
+  }
+
   async function initAuth() {
     try {
-      const response = await api.get('/user')
-      user.value = response.data?.data ?? response.data
+      const response = await api.get('/me')
+      user.value = extractUser(response.data)
     } catch {
       user.value = null
     } finally {
@@ -38,34 +46,31 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  /**
-   * Login via Sanctum SPA cookie-based auth
-   * 1. GET /sanctum/csrf-cookie (set XSRF-TOKEN cookie)
-   * 2. POST /login (session di-set via httpOnly cookie)
-   * 3. GET /api/user (ambil data user)
-   */
   async function login(credentials: LoginCredentials) {
     loading.value = true
     error.value = null
     try {
-      // Step 1: CSRF cookie
+      // CSRF cookie initialization for Sanctum
       await api.get('/sanctum/csrf-cookie', {
-        baseURL: import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:8000',
+        baseURL: 'http://localhost:8000',
       })
-      // Step 2: Login (session cookie set by server)
-      await api.post('/auth/login', credentials)
-      // Step 3: Fetch user data
-      const response = await api.get('/user')
-      user.value = response.data?.data ?? response.data
+      const loginRes = await api.post('/login', credentials)
+      if (loginRes.data?.user) {
+        user.value = extractUser(loginRes.data)
+      } else {
+        const response = await api.get('/me')
+        user.value = extractUser(response.data)
+      }
 
-      // Redirect berdasarkan role
       if (user.value?.role === 'penilai') {
         await router.push('/penilai/dashboard')
       } else {
         await router.push('/pemohon/dashboard')
       }
     } catch (err: any) {
-      error.value = err.response?.data?.message ?? 'Login gagal. Periksa email dan password Anda.'
+      error.value = err.response?.data?.message
+        ?? err.response?.data?.errors?.email?.[0]
+        ?? 'Login gagal. Periksa email dan kata sandi Anda.'
       throw err
     } finally {
       loading.value = false
@@ -77,11 +82,15 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
     try {
       await api.get('/sanctum/csrf-cookie', {
-        baseURL: import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:8000',
+        baseURL: 'http://localhost:8000',
       })
-      await api.post('/auth/register', data)
-      const response = await api.get('/user')
-      user.value = response.data?.data ?? response.data
+      const regRes = await api.post('/register', data)
+      if (regRes.data?.user) {
+        user.value = extractUser(regRes.data)
+      } else {
+        const response = await api.get('/me')
+        user.value = extractUser(response.data)
+      }
 
       if (user.value?.role === 'penilai') {
         await router.push('/penilai/dashboard')
@@ -98,7 +107,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function logout() {
     try {
-      await api.post('/auth/logout')
+      await api.post('/logout')
     } catch {
       // Ignore logout API errors
     } finally {
@@ -119,6 +128,7 @@ export const useAuthStore = defineStore('auth', () => {
     isAuthenticated,
     isPemohon,
     isPenilai,
+    userRole,
     userName,
     userInitials,
     initAuth,

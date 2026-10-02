@@ -20,31 +20,38 @@
         </button>
       </div>
 
-      <!-- Navigation -->
-      <nav class="flex-1 px-3 py-4">
-        <span class="block px-3 pb-3 text-[10px] font-bold uppercase text-mute tracking-widest">MENU UTAMA</span>
+      <!-- Navigation Links -->
+      <nav class="flex-1 px-3 py-4 flex flex-col gap-1">
+        <span class="block px-3 pb-2 text-[10px] font-bold uppercase text-mute tracking-widest">MENU UTAMA</span>
         <router-link
           v-for="item in navItems"
           :key="item.path"
           :to="item.path"
-          class="group relative flex items-center gap-3 px-3 py-2.5 rounded-sm text-on-dark-mute text-sm font-medium no-underline transition-all hover:bg-surface-elevated hover:text-on-dark"
+          class="group relative flex items-center gap-3 px-3 py-2.5 rounded-sm text-on-dark-mute text-xs font-semibold no-underline transition-all hover:bg-surface-elevated hover:text-on-dark"
           active-class="!bg-surface-elevated !text-on-dark"
           @click="sidebarOpen = false"
         >
           <div class="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-primary rounded-r-sm opacity-0 group-[.router-link-active]:opacity-100 transition-opacity"></div>
-          <Icon :icon="item.icon" class="text-lg w-6 text-center flex-shrink-0" />
+          <Icon :icon="item.icon" class="text-base w-5 text-center flex-shrink-0" />
           <span class="flex-1">{{ item.label }}</span>
-          <span v-if="item.badge" class="bg-primary text-ink text-[11px] font-bold px-2 py-0.5 rounded-full leading-tight">{{ item.badge }}</span>
+          <span
+            v-if="item.badge"
+            class="bg-warning text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full leading-tight"
+          >
+            {{ item.badge }}
+          </span>
         </router-link>
       </nav>
 
-      <!-- Sidebar footer -->
-      <div class="flex items-center justify-between px-5 py-4 border-t border-hairline-strong">
+      <!-- Sidebar footer / user info -->
+      <div class="flex items-center justify-between px-5 py-4 border-t border-hairline-strong bg-surface-dark">
         <div class="flex items-center gap-2.5 flex-1 min-w-0">
-          <div class="w-9 h-9 rounded-full bg-primary text-ink flex items-center justify-center text-xs font-bold flex-shrink-0">{{ authStore.userInitials }}</div>
+          <div class="w-8 h-8 rounded-full bg-primary text-ink flex items-center justify-center text-xs font-bold flex-shrink-0">
+            {{ authStore.userInitials }}
+          </div>
           <div class="flex flex-col min-w-0">
-            <span class="text-xs font-semibold truncate">{{ authStore.userName }}</span>
-            <span class="text-[11px] text-mute truncate">{{ authStore.user?.email }}</span>
+            <span class="text-xs font-bold truncate">{{ authStore.userName }}</span>
+            <span class="text-[10px] text-mute truncate capitalize">{{ authStore.userRole }}</span>
           </div>
         </div>
         <button
@@ -64,47 +71,59 @@
       @click="sidebarOpen = false"
     ></div>
 
-    <!-- Main content -->
+    <!-- Main Content Area -->
     <div class="flex-1 flex flex-col min-h-screen ml-0 lg:ml-[260px] transition-[margin] duration-300">
-      <!-- Topbar -->
-      <header class="sticky top-0 z-30 flex items-center h-14 px-5 bg-canvas border-b border-hairline">
-        <button
-          class="lg:hidden flex items-center justify-center w-9 h-9 bg-transparent border border-hairline rounded-sm cursor-pointer mr-3 hover:bg-surface-soft transition-colors"
-          @click="sidebarOpen = true"
-        >
-          <Icon icon="mdi:menu" class="text-lg" />
-        </button>
-        <span class="flex-1 text-sm font-bold text-ink">{{ currentPageTitle }}</span>
+      <!-- Topbar Header -->
+      <header class="sticky top-0 z-30 flex items-center justify-between h-14 px-5 bg-canvas border-b border-hairline">
+        <div class="flex items-center gap-3">
+          <button
+            class="lg:hidden flex items-center justify-center w-8 h-8 bg-transparent border border-hairline rounded-sm cursor-pointer hover:bg-surface-soft transition-colors"
+            @click="sidebarOpen = true"
+          >
+            <Icon icon="mdi:menu" class="text-lg" />
+          </button>
+          <span class="text-sm font-bold text-ink">{{ currentPageTitle }}</span>
+        </div>
+
+        <!-- User Dropdown & Status Quick Links -->
         <div class="relative">
           <button
             class="flex items-center gap-2 px-2.5 py-1.5 border border-hairline rounded-sm cursor-pointer hover:bg-surface-soft transition-colors"
             @click="showUserMenu = !showUserMenu"
           >
-            <div class="w-7 h-7 rounded-full bg-primary text-ink flex items-center justify-center text-[11px] font-bold">{{ authStore.userInitials }}</div>
+            <div class="w-6 h-6 rounded-full bg-primary text-ink flex items-center justify-center text-[10px] font-bold">
+              {{ authStore.userInitials }}
+            </div>
             <span class="hidden sm:block text-xs font-semibold text-ink">{{ authStore.userName }}</span>
             <Icon icon="mdi:chevron-down" class="text-xs text-mute" />
           </button>
 
-          <!-- Dropdown -->
-          <div v-if="showUserMenu" class="absolute top-full right-0 mt-2 w-60 bg-canvas border border-hairline rounded-sm overflow-hidden shadow-md z-50 animate-fade-in-up">
-            <div class="px-4 py-3">
-              <div class="text-sm font-bold text-ink">{{ authStore.userName }}</div>
-              <div class="text-xs text-mute mt-0.5">{{ authStore.user?.email }}</div>
+          <!-- Dropdown popup -->
+          <div
+            v-if="showUserMenu"
+            class="absolute top-full right-0 mt-2 w-56 bg-canvas border border-hairline rounded-sm overflow-hidden shadow-lg z-50 animate-fade-in-up"
+          >
+            <div class="px-4 py-3 bg-surface-soft">
+              <div class="text-xs font-bold text-ink">{{ authStore.userName }}</div>
+              <div class="text-[11px] text-mute truncate mt-0.5">{{ authStore.user?.email }}</div>
+              <span class="inline-block mt-1.5 px-2 py-0.5 text-[9px] font-bold uppercase rounded bg-primary/10 text-primary border border-primary/20">
+                {{ authStore.userRole }}
+              </span>
             </div>
             <div class="h-px bg-hairline"></div>
             <button
-              class="w-full flex items-center gap-2.5 px-4 py-2.5 bg-transparent border-none text-sm text-body cursor-pointer hover:bg-surface-soft hover:text-error transition-colors text-left"
+              class="w-full flex items-center gap-2 px-4 py-2.5 bg-transparent border-none text-xs font-semibold text-body cursor-pointer hover:bg-surface-soft hover:text-error transition-colors text-left"
               @click="handleLogout"
             >
-              <Icon icon="mdi:power" />
-              <span>Keluar</span>
+              <Icon icon="mdi:power" class="text-sm" />
+              <span>Keluar dari Akun</span>
             </button>
           </div>
         </div>
       </header>
 
-      <!-- Page content -->
-      <main class="flex-1 p-5 md:p-8">
+      <!-- Main View Content -->
+      <main class="flex-1 p-4 sm:p-6 lg:p-8">
         <router-view v-slot="{ Component }">
           <transition name="page" mode="out-in">
             <component :is="Component" />
@@ -116,7 +135,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { Icon } from '@iconify/vue'
 import { useAuthStore } from '@/stores/auth'
@@ -129,28 +148,30 @@ const route = useRoute()
 const sidebarOpen = ref(false)
 const showUserMenu = ref(false)
 
-const roleLabel = computed(() => authStore.isPenilai ? 'Panel Penilai' : 'Panel Pemohon')
+const roleLabel = computed(() => (authStore.isPenilai ? 'Panel Penilai' : 'Panel Pemohon'))
 
 const currentPageTitle = computed(() => {
   const map: Record<string, string> = {
-    DashboardPemohon: 'Dashboard',
-    SubmitDocument: 'Ajukan Dokumen',
-    DashboardPenilai: 'Dashboard',
-    ReviewDocument: 'Review Dokumen',
+    DashboardPemohon: 'Dashboard Pemohon',
+    SubmitDocument: 'Pengajuan Dokumen',
+    DashboardPenilai: 'Dashboard Penilai',
+    ReviewQueue: 'Antrean Penilaian Dokumen',
+    ReviewHistory: 'Riwayat Hasil Penilaian',
   }
-  return map[route.name?.toString() ?? ''] ?? 'Dashboard'
+  return map[route.name?.toString() ?? ''] ?? 'Sistem Persetujuan Dokumen'
 })
 
 const navItems = computed(() => {
   if (authStore.isPenilai) {
     return [
-      { path: '/penilai/dashboard', label: 'Dashboard', icon: 'mdi:view-dashboard-outline', badge: null },
-      { path: '/penilai/review', label: 'Review Dokumen', icon: 'mdi:file-search-outline', badge: docStore.pendingDocuments.length || null },
+      { path: '/penilai/dashboard', label: 'Dashboard Utama', icon: 'mdi:view-dashboard-outline', badge: null },
+      { path: '/penilai/review', label: 'Antrean Penilaian', icon: 'mdi:file-search-outline', badge: docStore.pendingApplications.length || null },
+      { path: '/penilai/history', label: 'Riwayat Penilaian', icon: 'mdi:history', badge: null },
     ]
   }
   return [
-    { path: '/pemohon/dashboard', label: 'Dashboard', icon: 'mdi:view-dashboard-outline', badge: null },
-    { path: '/pemohon/submit', label: 'Ajukan Dokumen', icon: 'mdi:file-plus-outline', badge: null },
+    { path: '/pemohon/dashboard', label: 'Dashboard & Permohonan', icon: 'mdi:view-dashboard-outline', badge: null },
+    { path: '/pemohon/submit', label: 'Buat Permohonan Baru', icon: 'mdi:file-plus-outline', badge: null },
   ]
 })
 
@@ -160,13 +181,22 @@ function handleLogout() {
 }
 
 function handleClickOutside(e: Event) {
-  if (!(e.target as HTMLElement).closest('.relative')) showUserMenu.value = false
+  if (!(e.target as HTMLElement).closest('.relative')) {
+    showUserMenu.value = false
+  }
 }
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
-  docStore.fetchDocuments()
+  docStore.fetchDashboard()
+  docStore.fetchApplications()
 })
-onUnmounted(() => document.removeEventListener('click', handleClickOutside))
-watch(() => route.path, () => { sidebarOpen.value = false })
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
+
+watch(() => route.path, () => {
+  sidebarOpen.value = false
+})
 </script>

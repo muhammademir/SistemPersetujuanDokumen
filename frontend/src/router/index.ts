@@ -28,6 +28,10 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, role: 'pemohon' },
     children: [
       {
+        path: '',
+        redirect: '/pemohon/dashboard',
+      },
+      {
         path: 'dashboard',
         name: 'DashboardPemohon',
         component: () => import('@/views/pemohon/Dashboard.vue'),
@@ -45,14 +49,23 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, role: 'penilai' },
     children: [
       {
+        path: '',
+        redirect: '/penilai/dashboard',
+      },
+      {
         path: 'dashboard',
         name: 'DashboardPenilai',
         component: () => import('@/views/penilai/Dashboard.vue'),
       },
       {
         path: 'review',
-        name: 'ReviewList',
-        component: () => import('@/views/penilai/Dashboard.vue'),
+        name: 'ReviewQueue',
+        component: () => import('@/views/penilai/ReviewQueue.vue'),
+      },
+      {
+        path: 'history',
+        name: 'ReviewHistory',
+        component: () => import('@/views/penilai/ReviewHistory.vue'),
       },
     ],
   },
@@ -64,11 +77,10 @@ const router = createRouter({
   routes,
 })
 
-// Navigation guard — cek dari Pinia store, bukan localStorage
+// Navigation guard
 router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore()
 
-  // Tunggu session check selesai (hanya sekali saat app load)
   if (!authStore.isReady) {
     await authStore.initAuth()
   }
@@ -82,6 +94,16 @@ router.beforeEach(async (to, _from, next) => {
   if (to.matched.some(r => r.meta.guest) && isAuthenticated) {
     if (authStore.isPenilai) return next('/penilai/dashboard')
     return next('/pemohon/dashboard')
+  }
+
+  // Role authorization guard
+  const requiredRole = to.matched.find(r => r.meta.role)?.meta.role as string | undefined
+  if (requiredRole && isAuthenticated) {
+    const userRole = authStore.userRole
+    if (requiredRole !== userRole) {
+      if (userRole === 'penilai') return next('/penilai/dashboard')
+      return next('/pemohon/dashboard')
+    }
   }
 
   next()

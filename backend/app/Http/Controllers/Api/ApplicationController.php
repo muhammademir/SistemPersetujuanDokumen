@@ -19,7 +19,7 @@ class ApplicationController extends Controller
     {
         $user = $request->user();
         $query = Application::query()
-            ->with(['applicant:id,name,company_name', 'reviewer:id,name'])
+            ->with(['applicant:id,name,email', 'reviewer:id,name'])
             ->withCount('documents')
             ->status($request->query('status'))
             ->search($request->query('search'));
@@ -69,7 +69,7 @@ class ApplicationController extends Controller
         Gate::authorize('view', $application);
 
         $application->load([
-            'applicant:id,name,company_name',
+            'applicant:id,name,email',
             'reviewer:id,name',
             'documents',
             'reviews.reviewer:id,name',

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ApplicationReview extends Model
 {
     protected $fillable = [
-        'application_id', 'reviewer_id', 'decision', 'notes', 'reviewed_at','reviewer_number',
+        'application_id', 'reviewer_id', 'decision', 'note', 'revision_number', 'reviewed_at',
     ];
 
     protected function casts(): array {

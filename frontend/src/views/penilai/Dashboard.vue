@@ -1,181 +1,367 @@
 <template>
-  <div class="max-w-[1200px] mx-auto">
-    <!-- Hero -->
-    <div class="bg-surface-dark text-on-dark p-8 rounded-sm flex items-start justify-between gap-6 flex-wrap mb-6 animate-fade-in-up">
+  <div class="max-w-[1240px] mx-auto flex flex-col gap-6">
+    <!-- Hero Banner -->
+    <div class="bg-surface-dark text-on-dark p-6 sm:p-8 rounded-sm flex items-start justify-between gap-6 flex-wrap animate-fade-in-up border border-hairline-strong">
       <div>
-        <div class="w-3 h-3 bg-primary mb-4"></div>
-        <h1 class="font-brand text-2xl font-bold mb-2">Panel Penilai</h1>
-        <p class="text-sm text-on-dark-mute max-w-[500px]">Tinjau dan berikan keputusan untuk dokumen yang diajukan oleh pemohon.</p>
+        <div class="w-3 h-3 bg-primary mb-3"></div>
+        <h1 class="font-brand text-2xl sm:text-3xl font-bold leading-tight mb-2">
+          Panel Penilai Persetujuan Dokumen
+        </h1>
+        <p class="text-sm text-on-dark-mute max-w-[540px] leading-relaxed">
+          Verifikasi kelayakan administratif dan teknis permohonan dokumen. Berikan keputusan Disetujui, Permintaan Revisi, atau Penolakan secara akurat.
+        </p>
       </div>
-      <div class="text-center px-6 py-4 border border-hairline-strong rounded-sm">
-        <span class="block text-3xl font-bold text-primary leading-tight">{{ docStore.stats.pending }}</span>
-        <span class="block text-[11px] font-bold uppercase text-on-dark-mute tracking-wider mt-1">Perlu Ditinjau</span>
+
+      <!-- Quick Summary Stat Counter in Hero -->
+      <div class="flex items-center gap-4">
+        <div class="text-center px-5 py-3 border border-hairline-strong rounded-sm bg-surface-elevated/40">
+          <span class="block text-2xl font-bold text-warning leading-tight">
+            {{ docStore.stats.submitted + docStore.stats.under_review }}
+          </span>
+          <span class="block text-[10px] font-bold uppercase text-on-dark-mute tracking-wider mt-0.5">Antrean Perlu Review</span>
+        </div>
+        <div class="text-center px-5 py-3 border border-hairline-strong rounded-sm bg-surface-elevated/40">
+          <span class="block text-2xl font-bold text-emerald-400 leading-tight">
+            {{ docStore.stats.approved }}
+          </span>
+          <span class="block text-[10px] font-bold uppercase text-on-dark-mute tracking-wider mt-0.5">Total Disetujui</span>
+        </div>
       </div>
     </div>
 
-    <!-- Stats -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <StatCard v-for="(s, i) in statCards" :key="s.label" v-bind="s" :class="['animate-fade-in-up', `delay-${(i+1)*100}`]" />
+    <!-- Alert / Feedback Notification -->
+    <div v-if="alertMessage" class="flex items-center justify-between gap-3 p-4 bg-primary/10 border border-primary/30 rounded-sm text-sm text-success-deep animate-fade-in">
+      <div class="flex items-center gap-2">
+        <Icon icon="mdi:check-circle" class="text-lg text-primary flex-shrink-0" />
+        <span>{{ alertMessage }}</span>
+      </div>
+      <button @click="alertMessage = ''" class="bg-transparent border-none text-ink cursor-pointer hover:opacity-70">
+        <Icon icon="mdi:close" />
+      </button>
     </div>
 
-    <!-- Chart + Pending -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-      <div class="relative overflow-hidden bg-canvas border border-hairline rounded-sm p-6">
+    <!-- 6 KPI Stat Cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div
+        v-for="card in statCards"
+        :key="card.label"
+        class="bg-canvas border border-hairline rounded-sm p-4 flex flex-col justify-between hover:border-primary transition-all relative overflow-hidden"
+      >
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-mute">{{ card.label }}</span>
+          <Icon :icon="card.icon" class="text-lg" :class="card.colorClass" />
+        </div>
+        <div class="font-brand text-2xl font-bold" :class="card.colorClass">
+          {{ card.value }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Workload Charts & Pending Review Queue -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Chart: Breakdown -->
+      <div class="bg-canvas border border-hairline rounded-sm p-6 relative overflow-hidden flex flex-col">
         <div class="absolute top-0 left-0 w-3 h-3 bg-primary"></div>
-        <h2 class="font-brand text-lg font-bold text-ink">Ringkasan Penilaian</h2>
-        <div class="mt-4">
-          <apexchart v-if="chartReady" type="bar" height="260" :options="chartOptions" :series="chartSeries" />
-          <div v-else class="flex flex-col items-center justify-center h-[200px] text-mute text-sm gap-2">
-            <Icon icon="mdi:chart-bar" class="text-3xl" /><span>Memuat grafik...</span>
+        <h2 class="font-brand text-base font-bold text-ink mb-1">Status Beban Permohonan</h2>
+        <p class="text-xs text-mute mb-4">Statistik permohonan yang masuk ke sistem</p>
+
+        <div class="flex-1 flex items-center justify-center min-h-[220px]">
+          <apexchart
+            v-if="chartReady && chartDataTotal > 0"
+            type="bar"
+            width="100%"
+            height="240"
+            :options="barChartOptions"
+            :series="barChartSeries"
+          />
+          <div v-else class="flex flex-col items-center justify-center text-mute text-xs gap-2 py-8">
+            <Icon icon="mdi:chart-bar" class="text-3xl" />
+            <span>Memuat grafik statistik...</span>
           </div>
         </div>
       </div>
 
-      <div class="relative overflow-hidden bg-canvas border border-hairline rounded-sm p-6">
-        <div class="absolute bottom-0 right-0 w-3 h-3 bg-primary"></div>
-        <h2 class="font-brand text-lg font-bold text-ink flex items-center gap-2">
-          Menunggu Penilaian
-          <span v-if="docStore.stats.pending" class="bg-primary text-ink text-xs font-bold px-2 py-0.5 rounded-full">{{ docStore.stats.pending }}</span>
-        </h2>
-        <div class="mt-4 flex flex-col">
-          <div v-for="doc in docStore.pendingDocuments.slice(0,5)" :key="doc.id"
-            class="flex items-center justify-between gap-3 py-3 border-b border-hairline last:border-b-0 cursor-pointer hover:bg-surface-soft hover:-mx-6 hover:px-6 transition-all"
-            @click="openReviewModal(doc)">
-            <div class="flex items-center gap-2.5 flex-1 min-w-0">
-              <Icon icon="mdi:file-document-outline" class="text-xl text-mute flex-shrink-0" />
+      <!-- Quick Review Queue -->
+      <div class="lg:col-span-2 bg-canvas border border-hairline rounded-sm p-6 relative overflow-hidden flex flex-col">
+        <div class="absolute top-0 right-0 w-3 h-3 bg-primary"></div>
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="font-brand text-base font-bold text-ink mb-0.5">Antrean Menunggu Verifikasi</h2>
+            <p class="text-xs text-mute">Daftar permohonan prioritas yang membutuhkan tindakan penilaian</p>
+          </div>
+          <span class="text-xs font-bold text-warning bg-warning/10 px-2.5 py-1 rounded-sm border border-warning/20">
+            {{ docStore.pendingApplications.length }} Menunggu
+          </span>
+        </div>
+
+        <div class="flex-1 flex flex-col divide-y divide-hairline">
+          <div
+            v-for="app in docStore.pendingApplications.slice(0, 6)"
+            :key="app.id"
+            class="py-3 flex items-center justify-between gap-3 hover:bg-surface-soft/60 px-2 -mx-2 rounded transition-colors"
+          >
+            <div class="flex items-center gap-3 min-w-0">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
+                {{ app.document_type }}
+              </span>
               <div class="flex flex-col min-w-0">
-                <span class="text-xs font-semibold text-ink truncate">{{ doc.title }}</span>
-                <span class="text-[11px] text-mute mt-0.5">{{ doc.user?.name ?? 'Pemohon' }} · {{ formatDate(doc.created_at) }}</span>
+                <span class="text-xs font-bold text-ink truncate cursor-pointer hover:text-primary" @click="openDetailModal(app)">
+                  {{ app.title }}
+                </span>
+                <span class="text-[11px] text-mute flex items-center gap-1.5 mt-0.5">
+                  <span class="font-mono">{{ app.code }}</span> · Pemohon: {{ app.applicant?.name || '-' }} · {{ formatDate(app.submitted_at || app.created_at) }}
+                </span>
               </div>
             </div>
-            <button class="bg-transparent border-none text-primary text-xs font-bold cursor-pointer whitespace-nowrap">Tinjau →</button>
+
+            <div class="flex items-center gap-2 flex-shrink-0">
+              <button
+                @click="openReviewModal(app)"
+                class="px-3.5 py-1.5 bg-primary text-ink text-xs font-bold rounded-sm border-none cursor-pointer hover:bg-primary-dark transition-colors shadow-xs"
+              >
+                Tinjau Sekarang
+              </button>
+            </div>
           </div>
-          <div v-if="!docStore.pendingDocuments.length" class="flex flex-col items-center gap-2 py-8 text-mute text-sm">
-            <Icon icon="mdi:check-all" class="text-2xl" /><span>Semua dokumen sudah ditinjau</span>
+
+          <div v-if="!docStore.pendingApplications.length" class="flex flex-col items-center justify-center py-12 text-mute text-xs gap-2">
+            <Icon icon="mdi:check-all" class="text-3xl text-emerald-500" />
+            <span class="font-semibold text-ink">Semua permohonan sudah selesai ditinjau</span>
+            <span>Tidak ada permohonan yang menunggu verifikasi saat ini.</span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Table -->
-    <div class="bg-canvas border border-hairline rounded-sm p-6 overflow-hidden">
-      <div class="flex items-center justify-between flex-wrap gap-4 mb-4">
-        <h2 class="font-brand text-lg font-bold text-ink">Semua Dokumen</h2>
-        <div class="flex gap-1 overflow-x-auto">
-          <button v-for="tab in filterTabs" :key="tab.value" @click="activeFilter = tab.value"
-            class="px-4 py-2 border-none rounded-sm font-brand text-xs font-bold cursor-pointer transition-all whitespace-nowrap"
-            :class="activeFilter === tab.value ? 'bg-ink text-on-dark' : 'bg-transparent text-ink hover:bg-surface-soft'">
-            {{ tab.label }}
-          </button>
+    <!-- Full Applications Table with Filters and Pagination -->
+    <div class="bg-canvas border border-hairline rounded-sm p-6 flex flex-col gap-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="font-brand text-lg font-bold text-ink">Seluruh Data Permohonan</h2>
+          <p class="text-xs text-mute">Tinjau, cari, filter, dan telusuri seluruh riwayat pengajuan dokumen</p>
+        </div>
+
+        <!-- Search, Document Type Filter -->
+        <div class="flex items-center gap-2 flex-wrap">
+          <div class="relative min-w-[220px]">
+            <Icon icon="mdi:magnify" class="absolute left-3 top-1/2 -translate-y-1/2 text-mute text-base" />
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Cari kode atau judul..."
+              class="w-full h-9 pl-9 pr-3 bg-surface-soft border border-hairline rounded-sm text-xs text-ink outline-none focus:border-primary transition-colors"
+            />
+          </div>
+
+          <select
+            v-model="selectedType"
+            class="h-9 px-3 bg-surface-soft border border-hairline rounded-sm text-xs text-ink outline-none focus:border-primary transition-colors"
+          >
+            <option value="">Semua Jenis</option>
+            <option value="SLF">SLF</option>
+            <option value="AMDAL">AMDAL</option>
+            <option value="IMB">IMB</option>
+            <option value="UKL-UPL">UKL-UPL</option>
+            <option value="SIUP">SIUP</option>
+          </select>
         </div>
       </div>
 
+      <!-- Status Tabs -->
+      <div class="flex gap-1.5 overflow-x-auto pb-1 border-b border-hairline text-xs">
+        <button
+          v-for="tab in filterTabs"
+          :key="tab.value"
+          @click="activeStatusFilter = tab.value"
+          class="inline-flex items-center gap-1.5 px-3 py-2 border-b-2 font-bold cursor-pointer transition-all whitespace-nowrap"
+          :class="activeStatusFilter === tab.value ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-mute hover:text-ink hover:bg-surface-soft'"
+        >
+          <span>{{ tab.label }}</span>
+          <span class="px-1.5 py-0.2 rounded-full text-[10px]" :class="activeStatusFilter === tab.value ? 'bg-primary text-ink' : 'bg-surface-soft text-mute'">
+            {{ tab.count }}
+          </span>
+        </button>
+      </div>
+
+      <!-- Table View -->
       <div class="overflow-x-auto">
-        <table class="w-full border-collapse text-sm">
+        <table class="w-full border-collapse text-left text-xs">
           <thead>
-            <tr>
-              <th class="text-left px-3 py-2.5 text-xs font-bold uppercase tracking-wider text-mute border-b border-hairline whitespace-nowrap">Dokumen</th>
-              <th class="text-left px-3 py-2.5 text-xs font-bold uppercase tracking-wider text-mute border-b border-hairline whitespace-nowrap">Pemohon</th>
-              <th class="text-left px-3 py-2.5 text-xs font-bold uppercase tracking-wider text-mute border-b border-hairline whitespace-nowrap">Tanggal</th>
-              <th class="text-left px-3 py-2.5 text-xs font-bold uppercase tracking-wider text-mute border-b border-hairline whitespace-nowrap">Status</th>
-              <th class="text-left px-3 py-2.5 text-xs font-bold uppercase tracking-wider text-mute border-b border-hairline whitespace-nowrap">Aksi</th>
+            <tr class="bg-surface-soft/60 border-b border-hairline">
+              <th class="py-3 px-3 font-bold uppercase tracking-wider text-mute">Kode / Dokumen</th>
+              <th class="py-3 px-3 font-bold uppercase tracking-wider text-mute">Pemohon</th>
+              <th class="py-3 px-3 font-bold uppercase tracking-wider text-mute">Tanggal Masuk</th>
+              <th class="py-3 px-3 font-bold uppercase tracking-wider text-mute">Status</th>
+              <th class="py-3 px-3 font-bold uppercase tracking-wider text-mute text-right">Aksi</th>
             </tr>
           </thead>
-          <tbody>
-            <tr v-for="doc in filteredDocuments" :key="doc.id" class="hover:bg-surface-soft transition-colors">
-              <td class="px-3 py-3 border-b border-hairline">
+          <tbody class="divide-y divide-hairline">
+            <tr
+              v-for="app in filteredApplications"
+              :key="app.id"
+              class="hover:bg-surface-soft/40 transition-colors"
+            >
+              <td class="py-3 px-3">
                 <div class="flex flex-col">
-                  <span class="font-semibold text-ink truncate max-w-[250px]">{{ doc.title }}</span>
-                  <span class="text-xs text-mute mt-0.5 flex items-center gap-1"><Icon icon="mdi:paperclip" class="text-xs" /> {{ doc.file_name }}</span>
+                  <div class="flex items-center gap-2">
+                    <span class="font-mono text-mute text-[11px]">{{ app.code }}</span>
+                    <span class="px-1.5 py-0.2 bg-primary/10 text-primary border border-primary/20 rounded text-[9px] font-bold uppercase">
+                      {{ app.document_type }}
+                    </span>
+                  </div>
+                  <span class="font-bold text-ink text-sm mt-0.5 max-w-[320px] truncate">{{ app.title }}</span>
                 </div>
               </td>
-              <td class="px-3 py-3 border-b border-hairline">
-                <div class="flex items-center gap-2">
-                  <div class="w-7 h-7 rounded-full bg-surface-soft border border-hairline flex items-center justify-center text-[10px] font-bold text-ink flex-shrink-0">{{ getInitials(doc.user?.name) }}</div>
-                  <span>{{ doc.user?.name ?? '-' }}</span>
+              <td class="py-3 px-3">
+                <div class="flex flex-col">
+                  <span class="font-semibold text-ink">{{ app.applicant?.name || '-' }}</span>
+                  <span class="text-mute text-[11px]">{{ app.applicant?.email || '' }}</span>
                 </div>
               </td>
-              <td class="px-3 py-3 border-b border-hairline text-mute text-xs whitespace-nowrap">{{ formatDate(doc.created_at) }}</td>
-              <td class="px-3 py-3 border-b border-hairline"><StatusBadge :status="doc.status" /></td>
-              <td class="px-3 py-3 border-b border-hairline">
-                <button v-if="doc.status === 'pending'" @click="openReviewModal(doc)"
-                  class="px-4 py-1.5 bg-primary text-ink border-none rounded-sm text-xs font-bold cursor-pointer hover:bg-primary-dark transition-colors">Tinjau</button>
-                <span v-else class="text-xs text-mute">Selesai</span>
+              <td class="py-3 px-3 text-mute whitespace-nowrap">
+                {{ formatDate(app.submitted_at || app.created_at) }}
+              </td>
+              <td class="py-3 px-3 whitespace-nowrap">
+                <StatusBadge :status="app.status" />
+              </td>
+              <td class="py-3 px-3 text-right whitespace-nowrap">
+                <div class="flex items-center justify-end gap-2">
+                  <button
+                    @click="openDetailModal(app)"
+                    class="px-2.5 py-1.5 bg-surface-soft border border-hairline rounded-sm text-ink font-bold hover:bg-hairline cursor-pointer transition-colors"
+                  >
+                    Detail
+                  </button>
+                  <button
+                    v-if="['submitted', 'under_review'].includes(getStatusVal(app))"
+                    @click="openReviewModal(app)"
+                    class="px-3 py-1.5 bg-primary text-ink border-none rounded-sm font-bold hover:bg-primary-dark cursor-pointer transition-colors shadow-xs"
+                  >
+                    Tinjau
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
-      <div v-if="!filteredDocuments.length" class="text-center py-8 text-mute text-sm">
-        <Icon icon="mdi:inbox-outline" class="text-xl" /> Tidak ada dokumen
+
+      <div v-if="!filteredApplications.length" class="flex flex-col items-center justify-center py-12 text-mute text-xs gap-2">
+        <Icon icon="mdi:folder-open-outline" class="text-3xl" />
+        <span>Tidak ada permohonan yang sesuai filter atau kata kunci.</span>
       </div>
     </div>
 
-    <!-- Review Modal -->
+    <!-- Review Decision Modal -->
     <Teleport to="body">
       <transition name="modal">
-        <div v-if="showReviewModal && selectedDoc" class="fixed inset-0 bg-black/60 flex items-center justify-center p-6 z-[100]" @click.self="closeReviewModal">
-          <div class="bg-canvas rounded-sm w-full max-w-[560px] max-h-[90vh] overflow-y-auto animate-fade-in-up">
-            <!-- Header -->
-            <div class="flex items-center justify-between px-6 py-5 border-b border-hairline">
-              <h2 class="text-lg font-bold text-ink">Tinjauan Dokumen</h2>
-              <button @click="closeReviewModal" class="w-8 h-8 flex items-center justify-center bg-transparent border border-hairline rounded-sm text-mute cursor-pointer hover:bg-surface-soft transition-colors">
+        <div v-if="showReviewModal && reviewTargetApp" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 sm:p-6 z-[100] backdrop-blur-xs" @click.self="closeReviewModal">
+          <div class="bg-canvas rounded-sm w-full max-w-[580px] max-h-[92vh] overflow-y-auto border border-hairline shadow-2xl animate-fade-in-up">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between px-6 py-4 border-b border-hairline bg-surface-soft">
+              <div class="flex items-center gap-2.5">
+                <div class="w-3 h-3 bg-primary"></div>
+                <h2 class="text-base font-bold text-ink">Verifikasi & Keputusan Permohonan</h2>
+              </div>
+              <button @click="closeReviewModal" class="w-8 h-8 flex items-center justify-center bg-transparent border border-hairline rounded-sm text-mute cursor-pointer hover:bg-canvas transition-colors">
                 <Icon icon="mdi:close" />
               </button>
             </div>
 
-            <!-- Body -->
-            <div class="px-6 py-5 flex flex-col gap-5">
-              <!-- Doc info -->
-              <div class="relative bg-surface-soft rounded-sm p-5">
-                <div class="absolute top-0 left-0 w-3 h-3 bg-primary"></div>
-                <h3 class="text-base font-bold text-ink mb-1.5">{{ selectedDoc.title }}</h3>
-                <p class="text-sm text-body leading-relaxed mb-3">{{ selectedDoc.description }}</p>
-                <div class="flex flex-wrap gap-4 text-xs text-mute">
-                  <span class="flex items-center gap-1"><Icon icon="mdi:paperclip" /> {{ selectedDoc.file_name }}</span>
-                  <span class="flex items-center gap-1"><Icon icon="mdi:account-outline" /> {{ selectedDoc.user?.name }}</span>
-                  <span class="flex items-center gap-1"><Icon icon="mdi:calendar-outline" /> {{ formatDate(selectedDoc.created_at) }}</span>
+            <!-- Modal Content -->
+            <div class="p-6 flex flex-col gap-5">
+              <!-- Target App Card -->
+              <div class="p-4 bg-surface-soft/60 rounded-sm border border-hairline flex flex-col gap-1.5 text-xs">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="font-mono text-mute font-bold">{{ reviewTargetApp.code }}</span>
+                  <span class="px-2 py-0.5 bg-primary/10 text-primary rounded font-bold uppercase">{{ reviewTargetApp.document_type }}</span>
+                </div>
+                <h3 class="text-sm font-bold text-ink">{{ reviewTargetApp.title }}</h3>
+                <p class="text-body text-xs line-clamp-2">{{ reviewTargetApp.description }}</p>
+                <div class="text-[11px] text-mute mt-1">
+                  Pemohon: <span class="font-semibold text-ink">{{ reviewTargetApp.applicant?.name }}</span> ({{ reviewTargetApp.applicant?.email }})
                 </div>
               </div>
 
-              <!-- Decision -->
+              <!-- Decision Radio Group -->
               <div class="flex flex-col gap-2">
-                <label class="text-sm font-bold text-ink">Keputusan *</label>
-                <div class="grid grid-cols-3 gap-2">
-                  <button v-for="opt in decisionOptions" :key="opt.value" type="button" @click="reviewForm.status = opt.value"
-                    class="flex flex-col items-center gap-1 px-3 py-4 bg-transparent border rounded-sm cursor-pointer transition-all font-brand text-xs font-bold"
-                    :class="reviewForm.status === opt.value ? opt.activeClass : 'border-hairline hover:border-primary'">
-                    <Icon :icon="opt.icon" class="text-xl" />
-                    <span>{{ opt.label }}</span>
+                <label class="text-xs font-bold uppercase tracking-wider text-ink">Pilih Keputusan Penilaian *</label>
+                <div class="grid grid-cols-3 gap-2.5">
+                  <button
+                    type="button"
+                    @click="reviewForm.decision = 'approved'"
+                    class="p-3 flex flex-col items-center gap-1.5 rounded-sm border cursor-pointer font-brand text-xs font-bold transition-all"
+                    :class="reviewForm.decision === 'approved' ? 'bg-emerald-500/10 border-emerald-500 border-2 text-emerald-700' : 'border-hairline hover:border-emerald-500'"
+                  >
+                    <Icon icon="mdi:check-circle" class="text-xl text-emerald-600" />
+                    <span>Disetujui</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    @click="reviewForm.decision = 'revision_required'"
+                    class="p-3 flex flex-col items-center gap-1.5 rounded-sm border cursor-pointer font-brand text-xs font-bold transition-all"
+                    :class="reviewForm.decision === 'revision_required' ? 'bg-orange-500/10 border-orange-500 border-2 text-orange-600' : 'border-hairline hover:border-orange-500'"
+                  >
+                    <Icon icon="mdi:pencil-outline" class="text-xl text-orange-500" />
+                    <span>Perlu Revisi</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    @click="reviewForm.decision = 'rejected'"
+                    class="p-3 flex flex-col items-center gap-1.5 rounded-sm border cursor-pointer font-brand text-xs font-bold transition-all"
+                    :class="reviewForm.decision === 'rejected' ? 'bg-error/10 border-error border-2 text-error' : 'border-hairline hover:border-error'"
+                  >
+                    <Icon icon="mdi:close-circle" class="text-xl text-error" />
+                    <span>Ditolak</span>
                   </button>
                 </div>
               </div>
 
-              <!-- Notes -->
+              <!-- Review Notes -->
               <div class="flex flex-col gap-1.5">
-                <label class="text-sm font-bold text-ink">Catatan {{ reviewForm.status === 'revision' ? '(Wajib)' : '(Opsional)' }}</label>
-                <textarea v-model="reviewForm.notes" rows="4" :required="reviewForm.status === 'revision'"
-                  class="w-full px-4 py-3 bg-canvas border border-hairline rounded-sm font-brand text-sm text-ink outline-none resize-y min-h-[80px] transition-colors focus:border-primary focus:border-2 focus:px-[15px] placeholder:text-ash"
-                  placeholder="Berikan catatan atau alasan keputusan Anda..."></textarea>
+                <label class="text-xs font-bold uppercase tracking-wider text-ink">
+                  Catatan / Keterangan Hasil Penilaian {{ reviewForm.decision === 'revision_required' ? '(Wajib Diisi)' : '(Opsional)' }}
+                </label>
+                <textarea
+                  v-model="reviewForm.note"
+                  rows="4"
+                  :required="reviewForm.decision === 'revision_required'"
+                  placeholder="Berikan alasan atau instruksi revisi yang jelas untuk pemohon..."
+                  class="w-full px-4 py-3 bg-canvas border border-hairline rounded-sm font-brand text-xs text-ink outline-none resize-y min-h-[90px] transition-colors focus:border-primary focus:border-2 focus:px-[15px] placeholder:text-ash"
+                ></textarea>
               </div>
             </div>
 
-            <!-- Footer -->
-            <div class="flex justify-end gap-3 px-6 py-4 border-t border-hairline">
-              <button @click="closeReviewModal"
-                class="px-5 py-2.5 bg-transparent border border-hairline rounded-sm font-brand text-sm font-bold text-ink cursor-pointer hover:bg-surface-soft transition-all">Batal</button>
-              <button @click="handleSubmitReview"
-                :disabled="!reviewForm.status || docStore.loading || (reviewForm.status === 'revision' && !reviewForm.notes.trim())"
-                class="inline-flex items-center gap-2 px-5 py-2.5 border-none rounded-sm font-brand text-sm font-bold cursor-pointer transition-all disabled:bg-surface-soft disabled:text-ash disabled:cursor-not-allowed"
-                :class="submitBtnClass">
+            <!-- Modal Footer -->
+            <div class="flex items-center justify-end gap-2 px-6 py-4 border-t border-hairline bg-surface-soft">
+              <button
+                @click="closeReviewModal"
+                class="px-4 py-2 bg-transparent border border-hairline rounded-sm font-brand text-xs font-bold text-ink hover:bg-canvas cursor-pointer transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                @click="handleSubmitReview"
+                :disabled="!reviewForm.decision || docStore.loading || (reviewForm.decision === 'revision_required' && !reviewForm.note.trim())"
+                class="inline-flex items-center gap-2 px-5 py-2 border-none rounded-sm font-brand text-xs font-bold cursor-pointer transition-all disabled:bg-surface-soft disabled:text-ash disabled:cursor-not-allowed text-ink bg-primary hover:bg-primary-dark shadow-xs"
+              >
                 <span v-if="docStore.loading" class="w-3.5 h-3.5 border-2 border-transparent border-t-current rounded-full animate-spin"></span>
-                <span>{{ submitBtnLabel }}</span>
+                <span>Kirim Keputusan</span>
               </button>
             </div>
           </div>
         </div>
       </transition>
     </Teleport>
+
+    <!-- Application Detail Modal -->
+    <ApplicationDetailModal
+      v-model="showDetailModal"
+      :application="selectedApplication"
+      @open-review="handleOpenReviewFromDetail"
+    />
   </div>
 </template>
 
@@ -183,71 +369,156 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useDocumentStore } from '@/stores/document'
-import StatCard from '@/components/StatCard.vue'
+import DocumentCard from '@/components/DocumentCard.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
-import type { Document } from '@/types'
+import ApplicationDetailModal from '@/components/ApplicationDetailModal.vue'
+import type { Application } from '@/types'
 
 const docStore = useDocumentStore()
-const activeFilter = ref('all')
+
+const activeStatusFilter = ref('all')
+const searchQuery = ref('')
+const selectedType = ref('')
 const chartReady = ref(false)
+const alertMessage = ref('')
+
+const showDetailModal = ref(false)
+const selectedApplication = ref<Application | null>(null)
+
 const showReviewModal = ref(false)
-const selectedDoc = ref<Document | null>(null)
-const reviewForm = reactive({ status: '' as string, notes: '' })
-
-const statCards = computed(() => [
-  { value: docStore.stats.total, label: 'Total Dokumen', icon: 'mdi:folder-outline', variant: 'primary' as const },
-  { value: docStore.stats.pending, label: 'Menunggu', icon: 'mdi:clock-outline', variant: 'warning' as const },
-  { value: docStore.stats.approved, label: 'Disetujui', icon: 'mdi:check-circle-outline', variant: 'success' as const },
-  { value: docStore.stats.revision + docStore.stats.rejected, label: 'Revisi/Tolak', icon: 'mdi:undo-variant', variant: 'danger' as const },
-])
-
-const filterTabs = [
-  { label: 'Semua', value: 'all' }, { label: 'Menunggu', value: 'pending' },
-  { label: 'Disetujui', value: 'approved' }, { label: 'Revisi', value: 'revision' }, { label: 'Ditolak', value: 'rejected' },
-]
-
-const decisionOptions = [
-  { value: 'approved', label: 'Setuju', icon: 'mdi:check-circle-outline', activeClass: 'border-primary border-2 bg-primary/10 text-success-deep px-[11px] py-[15px]' },
-  { value: 'revision', label: 'Revisi', icon: 'mdi:pencil-outline', activeClass: 'border-warning border-2 bg-warning/10 text-warning px-[11px] py-[15px]' },
-  { value: 'rejected', label: 'Tolak', icon: 'mdi:close-circle-outline', activeClass: 'border-error border-2 bg-error/10 text-error px-[11px] py-[15px]' },
-]
-
-const filteredDocuments = computed(() => activeFilter.value === 'all' ? docStore.documents : docStore.documents.filter(d => d.status === activeFilter.value))
-
-const submitBtnLabel = computed(() => {
-  if (docStore.loading) return 'Memproses...'
-  return { approved: 'Setujui Dokumen', revision: 'Kirim Revisi', rejected: 'Tolak Dokumen' }[reviewForm.status] ?? 'Pilih Keputusan'
+const reviewTargetApp = ref<Application | null>(null)
+const reviewForm = reactive({
+  decision: 'approved' as string,
+  note: '',
 })
 
-const submitBtnClass = computed(() => ({
-  'bg-primary text-ink hover:bg-primary-dark': reviewForm.status === 'approved',
-  'bg-warning text-white': reviewForm.status === 'revision',
-  'bg-error text-white': reviewForm.status === 'rejected',
-  'bg-surface-soft text-ash': !reviewForm.status,
-}))
+const statCards = computed(() => [
+  { label: 'Total', value: docStore.stats.total, icon: 'mdi:folder-outline', colorClass: 'text-ink' },
+  { label: 'Menunggu', value: docStore.stats.submitted, icon: 'mdi:clock-outline', colorClass: 'text-warning' },
+  { label: 'Ditinjau', value: docStore.stats.under_review, icon: 'mdi:file-search-outline', colorClass: 'text-info' },
+  { label: 'Revisi', value: docStore.stats.revision_required, icon: 'mdi:pencil-ruler', colorClass: 'text-orange-500' },
+  { label: 'Disetujui', value: docStore.stats.approved, icon: 'mdi:check-circle-outline', colorClass: 'text-emerald-600' },
+  { label: 'Ditolak', value: docStore.stats.rejected, icon: 'mdi:close-circle-outline', colorClass: 'text-error' },
+])
 
-const chartSeries = computed(() => [{ name: 'Jumlah', data: [docStore.stats.pending, docStore.stats.approved, docStore.stats.revision, docStore.stats.rejected] }])
-const chartOptions = computed(() => ({
+const filterTabs = computed(() => [
+  { label: 'Semua', value: 'all', count: docStore.stats.total },
+  { label: 'Menunggu Verifikasi', value: 'submitted', count: docStore.stats.submitted },
+  { label: 'Sedang Ditinjau', value: 'under_review', count: docStore.stats.under_review },
+  { label: 'Perlu Revisi', value: 'revision_required', count: docStore.stats.revision_required },
+  { label: 'Disetujui', value: 'approved', count: docStore.stats.approved },
+  { label: 'Ditolak', value: 'rejected', count: docStore.stats.rejected },
+])
+
+const filteredApplications = computed(() => {
+  return docStore.applications.filter(app => {
+    const statusVal = getStatusVal(app)
+    const matchesStatus = activeStatusFilter.value === 'all' || statusVal === activeStatusFilter.value
+    const matchesSearch = !searchQuery.value.trim() ||
+      app.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      app.code.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      (app.applicant?.name && app.applicant.name.toLowerCase().includes(searchQuery.value.toLowerCase()))
+    const matchesType = !selectedType.value || app.document_type === selectedType.value
+    return matchesStatus && matchesSearch && matchesType
+  })
+})
+
+const chartDataTotal = computed(() => {
+  return docStore.stats.submitted + docStore.stats.under_review + docStore.stats.revision_required + docStore.stats.approved + docStore.stats.rejected
+})
+
+const barChartSeries = computed(() => [
+  {
+    name: 'Jumlah Dokumen',
+    data: [
+      docStore.stats.submitted,
+      docStore.stats.under_review,
+      docStore.stats.revision_required,
+      docStore.stats.approved,
+      docStore.stats.rejected,
+    ],
+  },
+])
+
+const barChartOptions = computed(() => ({
   chart: { type: 'bar', fontFamily: 'Inter, Arial, sans-serif', toolbar: { show: false }, background: 'transparent' },
-  plotOptions: { bar: { borderRadius: 2, columnWidth: '50%', distributed: true } },
+  plotOptions: {
+    bar: {
+      borderRadius: 2,
+      columnWidth: '45%',
+      distributed: true,
+    },
+  },
   dataLabels: { enabled: false },
-  colors: ['#df6500', '#76b900', '#ef9100', '#e52020'],
-  xaxis: { categories: ['Menunggu', 'Disetujui', 'Revisi', 'Ditolak'], labels: { style: { fontSize: '12px', fontWeight: 600 } } },
-  yaxis: { labels: { style: { fontSize: '12px' } } },
+  colors: ['#df6500', '#0284c7', '#ea580c', '#10b981', '#ef4444'],
+  xaxis: {
+    categories: ['Menunggu', 'Ditinjau', 'Revisi', 'Disetujui', 'Ditolak'],
+    labels: { style: { fontSize: '11px', fontWeight: 600 } },
+  },
+  yaxis: { labels: { style: { fontSize: '11px' } } },
   legend: { show: false },
-  grid: { borderColor: '#cccccc', strokeDashArray: 4 },
+  grid: { borderColor: '#e5e5e5', strokeDashArray: 3 },
 }))
 
-function formatDate(d: string) { return new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) }
-function getInitials(n?: string) { if (!n) return '??'; const p = n.split(' '); return p.length >= 2 ? (p[0][0] + p[1][0]).toUpperCase() : p[0].substring(0, 2).toUpperCase() }
-
-function openReviewModal(doc: Document) { selectedDoc.value = doc; reviewForm.status = ''; reviewForm.notes = ''; showReviewModal.value = true }
-function closeReviewModal() { showReviewModal.value = false; selectedDoc.value = null }
-
-async function handleSubmitReview() {
-  if (!selectedDoc.value || !reviewForm.status) return
-  try { await docStore.reviewDocument(selectedDoc.value.id, { status: reviewForm.status, notes: reviewForm.notes }); closeReviewModal() } catch { /* handled */ }
+function getStatusVal(app: Application): string {
+  if (typeof app.status === 'object') return app.status.value
+  return app.status
 }
 
-onMounted(() => { docStore.fetchDocuments(); setTimeout(() => { chartReady.value = true }, 300) })
+function formatDate(d?: string | null) {
+  if (!d) return '-'
+  return new Date(d).toLocaleDateString('id-ID', {
+    day: 'numeric', month: 'short', year: 'numeric',
+  })
+}
+
+async function openDetailModal(app: Application) {
+  await docStore.fetchApplication(app.id)
+  selectedApplication.value = docStore.currentApplication || app
+  showDetailModal.value = true
+}
+
+function openReviewModal(app: Application) {
+  reviewTargetApp.value = app
+  reviewForm.decision = 'approved'
+  reviewForm.note = ''
+  showReviewModal.value = true
+}
+
+function closeReviewModal() {
+  showReviewModal.value = false
+  reviewTargetApp.value = null
+}
+
+function handleOpenReviewFromDetail(app: Application) {
+  showDetailModal.value = false
+  openReviewModal(app)
+}
+
+async function handleSubmitReview() {
+  if (!reviewTargetApp.value || !reviewForm.decision) return
+
+  try {
+    const updated = await docStore.reviewApplication(reviewTargetApp.value.id, {
+      decision: reviewForm.decision,
+      note: reviewForm.note,
+    })
+
+    const decText = reviewForm.decision === 'approved' ? 'disetujui' : reviewForm.decision === 'revision_required' ? 'diminta revisi' : 'ditolak'
+    alertMessage.value = `Permohonan "${reviewTargetApp.value.title}" (${reviewTargetApp.value.code}) berhasil ${decText}!`
+    closeReviewModal()
+    await docStore.fetchDashboard()
+    await docStore.fetchApplications()
+  } catch {
+    // handled in store
+  }
+}
+
+onMounted(async () => {
+  await Promise.all([
+    docStore.fetchDashboard(),
+    docStore.fetchApplications(),
+  ])
+  setTimeout(() => { chartReady.value = true }, 200)
+})
 </script>

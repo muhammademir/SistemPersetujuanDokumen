@@ -31,9 +31,9 @@ class ApplicationResource extends JsonResource
             'updated_at'     => $this->updated_at?->toIso8601String(),
 
             'applicant' => $this->whenLoaded('applicant', fn ($u) => [
-                'id'           => $u->id,
-                'name'         => $u->name,
-                'company_name' => $u->company_name,
+                'id'    => $u->id,
+                'name'  => $u->name,
+                'email' => $u->email,
             ]),
             'reviewer' => $this->whenLoaded('reviewer', fn ($u) => [
                 'id'   => $u->id,
