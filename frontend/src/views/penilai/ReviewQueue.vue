@@ -11,8 +11,11 @@
       </span>
     </div>
 
-    <!-- Alert / Feedback Notification -->
-    <div v-if="alertMessage" class="flex items-center justify-between gap-3 p-4 bg-primary/10 border border-primary/30 rounded-sm text-sm text-success-deep animate-fade-in">
+    <!-- Feedback Notification -->
+    <div
+      v-if="alertMessage"
+      class="flex items-center justify-between gap-3 p-4 bg-primary/10 border border-primary/30 rounded-sm text-sm text-success-deep animate-fade-in"
+    >
       <div class="flex items-center gap-2">
         <Icon icon="mdi:check-circle" class="text-lg text-primary flex-shrink-0" />
         <span>{{ alertMessage }}</span>
@@ -22,7 +25,7 @@
       </button>
     </div>
 
-    <!-- Grid List -->
+    <!-- Priority Review Cards -->
     <div v-if="pendingList.length" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       <div
         v-for="app in pendingList"
@@ -83,99 +86,13 @@
       <p class="text-xs text-mute max-w-[360px] mt-1">Saat ini tidak ada permohonan dokumen yang menunggu verifikasi atau penilaian.</p>
     </div>
 
-    <!-- Review Decision Modal -->
-    <Teleport to="body">
-      <transition name="modal">
-        <div v-if="showReviewModal && reviewTargetApp" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 sm:p-6 z-[100] backdrop-blur-xs" @click.self="closeReviewModal">
-          <div class="bg-canvas rounded-sm w-full max-w-[580px] max-h-[92vh] overflow-y-auto border border-hairline shadow-2xl animate-fade-in-up">
-            <div class="flex items-center justify-between px-6 py-4 border-b border-hairline bg-surface-soft">
-              <div class="flex items-center gap-2.5">
-                <div class="w-3 h-3 bg-primary"></div>
-                <h2 class="text-base font-bold text-ink">Verifikasi & Keputusan Permohonan</h2>
-              </div>
-              <button @click="closeReviewModal" class="w-8 h-8 flex items-center justify-center bg-transparent border border-hairline rounded-sm text-mute cursor-pointer hover:bg-canvas transition-colors">
-                <Icon icon="mdi:close" />
-              </button>
-            </div>
-
-            <div class="p-6 flex flex-col gap-5">
-              <div class="p-4 bg-surface-soft/60 rounded-sm border border-hairline flex flex-col gap-1.5 text-xs">
-                <div class="flex items-center justify-between gap-2">
-                  <span class="font-mono text-mute font-bold">{{ reviewTargetApp.code }}</span>
-                  <span class="px-2 py-0.5 bg-primary/10 text-primary rounded font-bold uppercase">{{ reviewTargetApp.document_type }}</span>
-                </div>
-                <h3 class="text-sm font-bold text-ink">{{ reviewTargetApp.title }}</h3>
-                <p class="text-body text-xs line-clamp-2">{{ reviewTargetApp.description }}</p>
-              </div>
-
-              <!-- Decision Buttons -->
-              <div class="flex flex-col gap-2">
-                <label class="text-xs font-bold uppercase tracking-wider text-ink">Pilih Keputusan Penilaian *</label>
-                <div class="grid grid-cols-3 gap-2.5">
-                  <button
-                    type="button"
-                    @click="reviewForm.decision = 'approved'"
-                    class="p-3 flex flex-col items-center gap-1.5 rounded-sm border cursor-pointer font-brand text-xs font-bold transition-all"
-                    :class="reviewForm.decision === 'approved' ? 'bg-emerald-500/10 border-emerald-500 border-2 text-emerald-700' : 'border-hairline hover:border-emerald-500'"
-                  >
-                    <Icon icon="mdi:check-circle" class="text-xl text-emerald-600" />
-                    <span>Disetujui</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    @click="reviewForm.decision = 'revision_required'"
-                    class="p-3 flex flex-col items-center gap-1.5 rounded-sm border cursor-pointer font-brand text-xs font-bold transition-all"
-                    :class="reviewForm.decision === 'revision_required' ? 'bg-orange-500/10 border-orange-500 border-2 text-orange-600' : 'border-hairline hover:border-orange-500'"
-                  >
-                    <Icon icon="mdi:pencil-outline" class="text-xl text-orange-500" />
-                    <span>Perlu Revisi</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    @click="reviewForm.decision = 'rejected'"
-                    class="p-3 flex flex-col items-center gap-1.5 rounded-sm border cursor-pointer font-brand text-xs font-bold transition-all"
-                    :class="reviewForm.decision === 'rejected' ? 'bg-error/10 border-error border-2 text-error' : 'border-hairline hover:border-error'"
-                  >
-                    <Icon icon="mdi:close-circle" class="text-xl text-error" />
-                    <span>Ditolak</span>
-                  </button>
-                </div>
-              </div>
-
-              <!-- Review Notes -->
-              <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-bold uppercase tracking-wider text-ink">
-                  Catatan / Keterangan Penilaian {{ reviewForm.decision === 'revision_required' ? '(Wajib Diisi)' : '(Opsional)' }}
-                </label>
-                <textarea
-                  v-model="reviewForm.note"
-                  rows="4"
-                  :required="reviewForm.decision === 'revision_required'"
-                  placeholder="Berikan catatan penilaian atau instruksi revisi..."
-                  class="w-full px-4 py-3 bg-canvas border border-hairline rounded-sm font-brand text-xs text-ink outline-none resize-y min-h-[90px] transition-colors focus:border-primary focus:border-2 focus:px-[15px] placeholder:text-ash"
-                ></textarea>
-              </div>
-            </div>
-
-            <div class="flex items-center justify-end gap-2 px-6 py-4 border-t border-hairline bg-surface-soft">
-              <button @click="closeReviewModal" class="px-4 py-2 bg-transparent border border-hairline rounded-sm font-brand text-xs font-bold text-ink hover:bg-canvas cursor-pointer">
-                Batal
-              </button>
-              <button
-                @click="handleSubmitReview"
-                :disabled="!reviewForm.decision || docStore.loading || (reviewForm.decision === 'revision_required' && !reviewForm.note.trim())"
-                class="inline-flex items-center gap-2 px-5 py-2 border-none rounded-sm font-brand text-xs font-bold cursor-pointer transition-all disabled:bg-surface-soft disabled:text-ash text-ink bg-primary hover:bg-primary-dark"
-              >
-                <span v-if="docStore.loading" class="w-3.5 h-3.5 border-2 border-transparent border-t-current rounded-full animate-spin"></span>
-                <span>Kirim Keputusan</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </transition>
-    </Teleport>
+    <!-- Modular Review Modal -->
+    <ReviewDecisionModal
+      v-model="showReviewModal"
+      :application="reviewTargetApp"
+      :loading="docStore.loading"
+      @submit="handleReviewSubmit"
+    />
 
     <!-- Detail Modal -->
     <ApplicationDetailModal
@@ -187,11 +104,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useDocumentStore } from '@/stores/document'
 import StatusBadge from '@/components/StatusBadge.vue'
 import ApplicationDetailModal from '@/components/ApplicationDetailModal.vue'
+import ReviewDecisionModal from '@/components/ReviewDecisionModal.vue'
+import { getStatusValue, formatDecision } from '@/utils/formatters'
 import type { Application } from '@/types'
 
 const docStore = useDocumentStore()
@@ -202,21 +121,13 @@ const selectedApplication = ref<Application | null>(null)
 
 const showReviewModal = ref(false)
 const reviewTargetApp = ref<Application | null>(null)
-const reviewForm = reactive({ decision: 'approved', note: '' })
 
 const pendingList = computed(() => {
-  return docStore.applications.filter(app => {
-    const val = typeof app.status === 'object' ? app.status.value : app.status
-    return ['submitted', 'under_review'].includes(val)
+  return docStore.applications.filter((app) => {
+    const statusVal = getStatusValue(app.status)
+    return ['submitted', 'under_review'].includes(statusVal)
   })
 })
-
-function formatDate(d?: string | null) {
-  if (!d) return '-'
-  return new Date(d).toLocaleDateString('id-ID', {
-    day: 'numeric', month: 'short', year: 'numeric',
-  })
-}
 
 async function openDetailModal(app: Application) {
   await docStore.fetchApplication(app.id)
@@ -226,14 +137,7 @@ async function openDetailModal(app: Application) {
 
 function openReviewModal(app: Application) {
   reviewTargetApp.value = app
-  reviewForm.decision = 'approved'
-  reviewForm.note = ''
   showReviewModal.value = true
-}
-
-function closeReviewModal() {
-  showReviewModal.value = false
-  reviewTargetApp.value = null
 }
 
 function handleOpenReviewFromDetail(app: Application) {
@@ -241,17 +145,22 @@ function handleOpenReviewFromDetail(app: Application) {
   openReviewModal(app)
 }
 
-async function handleSubmitReview() {
-  if (!reviewTargetApp.value || !reviewForm.decision) return
+async function handleReviewSubmit(payload: { decision: string; note: string }) {
+  if (!reviewTargetApp.value) return
+
   try {
-    await docStore.reviewApplication(reviewTargetApp.value.id, {
-      decision: reviewForm.decision,
-      note: reviewForm.note,
-    })
-    alertMessage.value = `Keputusan untuk "${reviewTargetApp.value.title}" berhasil disimpan!`
-    closeReviewModal()
+    const targetTitle = reviewTargetApp.value.title
+    await docStore.reviewApplication(reviewTargetApp.value.id, payload)
+
+    const label = formatDecision(payload.decision).toLowerCase()
+    alertMessage.value = `Permohonan "${targetTitle}" berhasil ${label}!`
+    showReviewModal.value = false
+    reviewTargetApp.value = null
+
     await docStore.fetchApplications()
-  } catch {}
+  } catch {
+    // Error notification handled by docStore
+  }
 }
 
 onMounted(() => {

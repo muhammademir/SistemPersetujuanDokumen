@@ -189,6 +189,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Icon } from '@iconify/vue'
 import { useDocumentStore } from '@/stores/document'
+import { formatFileSize } from '@/utils/formatters'
 
 const route = useRoute()
 const router = useRouter()
@@ -244,11 +245,6 @@ function removeFile(index: number) {
   if (fileInputRef.value) fileInputRef.value.value = ''
 }
 
-function formatFileSize(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / 1048576).toFixed(1)} MB`
-}
 
 async function handleSubmit(autoSubmit: boolean) {
   if (!form.title.trim() || !form.description.trim()) return

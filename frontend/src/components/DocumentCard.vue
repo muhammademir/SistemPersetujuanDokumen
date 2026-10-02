@@ -55,23 +55,22 @@ import { computed } from 'vue'
 import { Icon } from '@iconify/vue'
 import type { Application } from '@/types'
 import StatusBadge from './StatusBadge.vue'
+import { formatDate, getStatusValue } from '@/utils/formatters'
 
-const props = withDefaults(defineProps<{
-  application: Application
-  actionLabel?: string
-}>(), {})
+const props = withDefaults(
+  defineProps<{
+    application: Application
+    actionLabel?: string
+  }>(),
+  {}
+)
 
 defineEmits<{
   click: [app: Application]
   action: [app: Application]
 }>()
 
-const statusVal = computed(() => {
-  if (typeof props.application.status === 'object') {
-    return props.application.status.value
-  }
-  return props.application.status
-})
+const statusVal = computed(() => getStatusValue(props.application.status))
 
 const computedActionLabel = computed(() => {
   if (props.actionLabel) return props.actionLabel
@@ -81,10 +80,6 @@ const computedActionLabel = computed(() => {
 })
 
 const formattedDate = computed(() => {
-  const d = props.application.updated_at || props.application.created_at
-  if (!d) return '-'
-  return new Date(d).toLocaleDateString('id-ID', {
-    day: 'numeric', month: 'short', year: 'numeric',
-  })
+  return formatDate(props.application.updated_at || props.application.created_at)
 })
 </script>

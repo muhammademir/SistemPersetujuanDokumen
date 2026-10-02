@@ -187,6 +187,13 @@ import { Icon } from '@iconify/vue'
 import type { Application } from '@/types'
 import StatusBadge from './StatusBadge.vue'
 import { useAuthStore } from '@/stores/auth'
+import {
+  formatDateTime as formatDate,
+  formatFileSize,
+  formatDecision,
+  formatStatusName,
+  getStatusValue,
+} from '@/utils/formatters'
 
 const props = defineProps<{
   modelValue: boolean
@@ -206,48 +213,10 @@ const isPenilai = computed(() => authStore.isPenilai)
 
 const statusVal = computed(() => {
   if (!props.application) return ''
-  if (typeof props.application.status === 'object') return props.application.status.value
-  return props.application.status
+  return getStatusValue(props.application.status)
 })
 
 function close() {
   emit('update:modelValue', false)
-}
-
-function formatDate(d?: string | null) {
-  if (!d) return '-'
-  return new Date(d).toLocaleString('id-ID', {
-    day: 'numeric', month: 'short', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  })
-}
-
-function formatFileSize(bytes?: number) {
-  if (!bytes) return '0 B'
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / 1048576).toFixed(1)} MB`
-}
-
-function formatDecision(dec: string) {
-  const map: Record<string, string> = {
-    approved: 'Disetujui',
-    revision_required: 'Perlu Revisi',
-    rejected: 'Ditolak',
-  }
-  return map[dec] ?? dec
-}
-
-function formatStatusName(st?: string | null) {
-  if (!st) return '-'
-  const map: Record<string, string> = {
-    draft: 'Draft Permohonan',
-    submitted: 'Pengajuan Masuk',
-    under_review: 'Proses Penilaian',
-    revision_required: 'Diminta Revisi',
-    approved: 'Permohonan Disetujui',
-    rejected: 'Permohonan Ditolak',
-  }
-  return map[st] ?? st
 }
 </script>

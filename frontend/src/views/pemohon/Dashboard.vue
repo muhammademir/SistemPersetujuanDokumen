@@ -211,6 +211,7 @@ import { useDocumentStore } from '@/stores/document'
 import DocumentCard from '@/components/DocumentCard.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import ApplicationDetailModal from '@/components/ApplicationDetailModal.vue'
+import { formatRelativeTime, getStatusValue } from '@/utils/formatters'
 import type { Application } from '@/types'
 
 const authStore = useAuthStore()
@@ -247,7 +248,7 @@ const filterTabs = computed(() => [
 
 const filteredApplications = computed(() => {
   return docStore.applications.filter(app => {
-    const statusVal = typeof app.status === 'object' ? app.status.value : app.status
+    const statusVal = getStatusValue(app.status)
     const matchesStatus = activeStatusFilter.value === 'all' || statusVal === activeStatusFilter.value
     const matchesSearch = !searchQuery.value.trim() ||
       app.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
@@ -292,15 +293,6 @@ const chartOptions = computed(() => ({
   legend: { position: 'bottom', fontSize: '11px', itemMargin: { horizontal: 6, vertical: 3 } },
 }))
 
-function formatRelativeTime(dateStr: string): string {
-  if (!dateStr) return '-'
-  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000)
-  if (diff < 60) return 'Baru saja'
-  if (diff < 3600) return `${Math.floor(diff / 60)} mnt lalu`
-  if (diff < 86400) return `${Math.floor(diff / 3600)} jam lalu`
-  if (diff < 604800) return `${Math.floor(diff / 86400)} hari lalu`
-  return new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
-}
 
 async function openDetail(app: Application) {
   await docStore.fetchApplication(app.id)

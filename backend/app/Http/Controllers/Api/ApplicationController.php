@@ -2,20 +2,29 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Requests\Application\StoreApplicationRequest;
-use App\Http\Requests\Application\UpdateApplicationRequest;
-use App\Services\ApplicationService;
 use App\Enums\ApplicationStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Application\StoreApplicationRequest;
+use App\Http\Requests\Application\UpdateApplicationRequest;
 use App\Http\Resources\ApplicationResource;
 use App\Models\Application;
-use Illuminate\Support\Facades\Gate;
+use App\Services\ApplicationService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Gate;
 
 class ApplicationController extends Controller
 {
-    public function __construct(private ApplicationService $applicationService) {}
-    public function index(Request $request)
+    public function __construct(
+        private ApplicationService $applicationService
+    ) {}
+
+    /**
+     * Menampilkan daftar permohonan sesuai role pengguna.
+     */
+    public function index(Request $request): AnonymousResourceCollection
     {
         $user = $request->user();
         $query = Application::query()
@@ -24,13 +33,14 @@ class ApplicationController extends Controller
             ->status($request->query('status'))
             ->search($request->query('search'));
 
-        // Pemohon hanya lihat miliknya sendiri
+        // Pemohon hanya dapat melihat permohonan miliknya
         if ($user->hasRole('pemohon')) {
             $query->where('applicant_id', $user->id);
         } elseif ($user->hasRole('penilai')) {
+            // Penilai melihat semua permohonan yang bukan draft
             $query->where('status', '!=', ApplicationStatus::Draft->value);
         } else {
-            abort(403);
+            abort(403, 'Akses tidak diizinkan untuk role ini.');
         }
 
         $perPage = max(1, min((int) $request->query('per_page', 15), 100));
@@ -40,20 +50,12 @@ class ApplicationController extends Controller
         );
     }
 
-    public function downloadPdf()
-    {
-        $data = Application::all(); 
-        $pdf = Pdf::loadView('exports.applications', ['applications' => $data])
-                  ->setPaper('a4', 'landscape');         
-        return $pdf->download('laporan-permohonan.pdf');
-    }
-
     /**
-     * Store a newly created resource in storage.
+     * Membuat permohonan baru berstatus draft.
      */
-    public function store(StoreApplicationRequest $request)
+    public function store(StoreApplicationRequest $request): JsonResponse
     {
-       Gate::authorize('create', Application::class);
+        Gate::authorize('create', Application::class);
 
         $application = $this->applicationService
             ->create($request->user(), $request->validated())
@@ -61,10 +63,13 @@ class ApplicationController extends Controller
 
         return (new ApplicationResource($application))
             ->response()
-            ->setStatusCode(201); 
+            ->setStatusCode(201);
     }
 
-    public function show(Application $application)
+    /**
+     * Menampilkan detail permohonan lengkap dengan dokumen, review, dan log status.
+     */
+    public function show(Application $application): ApplicationResource
     {
         Gate::authorize('view', $application);
 
@@ -79,25 +84,34 @@ class ApplicationController extends Controller
         return new ApplicationResource($application);
     }
 
-    public function update(UpdateApplicationRequest $request, Application $application)
+    /**
+     * Memperbarui informasi permohonan (hanya jika draft atau revision_required).
+     */
+    public function update(UpdateApplicationRequest $request, Application $application): ApplicationResource
     {
-    Gate::authorize('update', $application);
+        Gate::authorize('update', $application);
 
         $application = $this->applicationService->update($application, $request->validated());
 
         return new ApplicationResource($application);
     }
 
-    public function destroy(Application $application)
+    /**
+     * Menghapus draft permohonan.
+     */
+    public function destroy(Application $application): Response
     {
-    Gate::authorize('delete', $application);
+        Gate::authorize('delete', $application);
 
         $this->applicationService->delete($application);
 
         return response()->noContent();
     }
 
-    public function submit(Request $request, Application $application)
+    /**
+     * Mengajukan permohonan (draft / revision_required -> submitted).
+     */
+    public function submit(Request $request, Application $application): ApplicationResource
     {
         Gate::authorize('submit', $application);
 
@@ -106,4 +120,3 @@ class ApplicationController extends Controller
         return new ApplicationResource($application);
     }
 }
-

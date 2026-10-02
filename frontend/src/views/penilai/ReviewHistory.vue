@@ -121,22 +121,7 @@ async function viewAppDetail(appId: number) {
   showDetailModal.value = true
 }
 
-function formatDateTime(d?: string) {
-  if (!d) return '-'
-  return new Date(d).toLocaleString('id-ID', {
-    day: 'numeric', month: 'short', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  })
-}
-
-function formatDecision(dec: string) {
-  const map: Record<string, string> = {
-    approved: 'Disetujui',
-    revision_required: 'Perlu Revisi',
-    rejected: 'Ditolak',
-  }
-  return map[dec] ?? dec
-}
+import { formatDateTime, formatDecision } from '@/utils/formatters'
 
 function getDecisionBadgeClass(dec: string) {
   switch (dec) {
