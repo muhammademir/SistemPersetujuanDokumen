@@ -1,83 +1,97 @@
 <template>
-  <Dialog
-    :visible="modelValue"
-    @update:visible="emit('update:modelValue', $event)"
-    modal
-    header="Verifikasi & Keputusan Permohonan"
-    :style="{ width: '90vw', maxWidth: '600px' }"
-  >
-    <div v-if="application" class="space-y-5 pt-2">
-      <!-- Target Summary Box -->
-      <div class="p-4 bg-surface-50 dark:bg-surface-800/60 rounded-lg border border-surface-200 dark:border-surface-700 flex flex-col gap-2 text-xs">
-        <div class="flex items-center justify-between gap-2">
-          <span class="font-mono text-surface-500 font-bold">{{ application.code }}</span>
-          <Tag :value="application.document_type" severity="info" class="text-xs uppercase font-bold" />
-        </div>
-        <h3 class="text-sm font-bold text-surface-900 dark:text-surface-0">{{ application.title }}</h3>
-        <p class="text-surface-600 dark:text-surface-400 text-xs line-clamp-2">
-          {{ application.description || 'Tidak ada catatan tambahan.' }}
-        </p>
-        <div v-if="application.applicant" class="text-[11px] text-surface-500 mt-1">
-          Pemohon: <span class="font-semibold text-surface-800 dark:text-surface-200">{{ application.applicant.name }}</span> ({{ application.applicant.email }})
-        </div>
-      </div>
+  <Dialog :open="modelValue" @update:open="emit('update:modelValue', $event)">
+    <DialogContent class="sm:max-w-[600px]">
+      <DialogHeader>
+        <DialogTitle>Verifikasi & Keputusan Permohonan</DialogTitle>
+        <DialogDescription>
+          Tentukan status persetujuan untuk dokumen permohonan ini.
+        </DialogDescription>
+      </DialogHeader>
 
-      <!-- Decision Options -->
-      <div class="space-y-2">
-        <label class="block text-xs font-bold uppercase tracking-wider text-surface-700 dark:text-surface-300">
-          Pilih Keputusan Penilaian *
-        </label>
-        <div class="grid grid-cols-3 gap-3">
-          <div
-            v-for="opt in decisionOptions"
-            :key="opt.value"
-            @click="decision = opt.value"
-            class="p-3.5 flex flex-col items-center gap-2 rounded-lg border-2 cursor-pointer transition-all text-center"
-            :class="decision === opt.value ? opt.activeClass : 'border-surface-200 dark:border-surface-700 hover:border-surface-400'"
-          >
-            <i :class="opt.icon" class="text-2xl" :style="{ color: opt.iconColor }"></i>
-            <span class="text-xs font-bold">{{ opt.label }}</span>
+      <div v-if="application" class="space-y-4 py-2">
+        <!-- Target Summary Box -->
+        <div class="p-3.5 bg-muted/50 rounded-lg border flex flex-col gap-1.5 text-xs">
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-mono text-muted-foreground font-bold">{{ application.code }}</span>
+            <Badge variant="secondary" class="text-[10px] font-bold uppercase">
+              {{ application.document_type }}
+            </Badge>
+          </div>
+          <h3 class="text-sm font-bold text-foreground">{{ application.title }}</h3>
+          <p class="text-muted-foreground text-xs line-clamp-2">
+            {{ application.description || 'Tidak ada catatan tambahan.' }}
+          </p>
+          <div v-if="application.applicant" class="text-[11px] text-muted-foreground mt-1">
+            Pemohon: <span class="font-semibold text-foreground">{{ application.applicant.name }}</span> ({{ application.applicant.email }})
           </div>
         </div>
+
+        <!-- Decision Options -->
+        <div class="space-y-2">
+          <label class="block text-xs font-bold uppercase tracking-wider text-foreground">
+            Pilih Keputusan Penilaian *
+          </label>
+          <div class="grid grid-cols-3 gap-3">
+            <div
+              v-for="opt in decisionOptions"
+              :key="opt.value"
+              @click="decision = opt.value"
+              class="p-3.5 flex flex-col items-center gap-2 rounded-lg border-2 cursor-pointer transition-all text-center select-none"
+              :class="decision === opt.value ? opt.activeClass : 'border-border hover:border-foreground/30'"
+            >
+              <component :is="opt.icon" class="w-6 h-6" :class="opt.iconClass" />
+              <span class="text-xs font-bold">{{ opt.label }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Review Notes Input -->
+        <div class="space-y-1.5">
+          <label class="block text-xs font-bold uppercase tracking-wider text-foreground">
+            Catatan Penilaian {{ isRevisionRequired ? '(Wajib Diisi)' : '(Opsional)' }}
+          </label>
+          <Textarea
+            v-model="note"
+            rows="4"
+            class="w-full text-xs resize-none"
+            placeholder="Berikan alasan atau instruksi revisi yang jelas untuk pemohon..."
+          />
+        </div>
       </div>
 
-      <!-- Review Notes Input -->
-      <div class="space-y-1.5">
-        <label class="block text-xs font-bold uppercase tracking-wider text-surface-700 dark:text-surface-300">
-          Catatan Penilaian {{ isRevisionRequired ? '(Wajib Diisi)' : '(Opsional)' }}
-        </label>
-        <Textarea
-          v-model="note"
-          rows="4"
-          class="w-full text-xs"
-          placeholder="Berikan alasan atau instruksi revisi yang jelas untuk pemohon..."
-          autoResize
-        />
-      </div>
-    </div>
-
-    <template #footer>
-      <div class="flex items-center justify-end gap-2 pt-2">
-        <Button label="Batal" severity="secondary" text @click="handleClose" />
+      <DialogFooter class="flex items-center justify-end gap-2 pt-2">
+        <Button variant="outline" size="sm" @click="handleClose">
+          Batal
+        </Button>
         <Button
-          label="Kirim Keputusan"
-          icon="pi pi-check"
-          severity="primary"
-          :loading="loading"
+          size="sm"
           :disabled="!isValid || loading"
           @click="handleSubmit"
-        />
-      </div>
-    </template>
+          class="gap-1.5"
+        >
+          <Loader2 v-if="loading" class="w-4 h-4 animate-spin" />
+          <CheckCircle2 v-else class="w-4 h-4" />
+          <span>Kirim Keputusan</span>
+        </Button>
+      </DialogFooter>
+    </DialogContent>
   </Dialog>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import Dialog from 'primevue/dialog'
-import Button from 'primevue/button'
-import Tag from 'primevue/tag'
-import Textarea from 'primevue/textarea'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Textarea } from '@/components/ui/textarea'
+import { CheckCircle2, AlertTriangle, XCircle, Loader2 } from 'lucide-vue-next'
 import type { Application } from '@/types'
 
 const props = withDefaults(
@@ -110,23 +124,23 @@ const decisionOptions = [
   {
     value: 'approved',
     label: 'Disetujui',
-    icon: 'pi pi-check-circle',
-    iconColor: '#10b981',
-    activeClass: 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300',
+    icon: CheckCircle2,
+    iconClass: 'text-emerald-500',
+    activeClass: 'border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
   },
   {
     value: 'revision_required',
     label: 'Perlu Revisi',
-    icon: 'pi pi-pencil',
-    iconColor: '#f59e0b',
-    activeClass: 'border-amber-500 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300',
+    icon: AlertTriangle,
+    iconClass: 'text-amber-500',
+    activeClass: 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400',
   },
   {
     value: 'rejected',
     label: 'Ditolak',
-    icon: 'pi pi-times-circle',
-    iconColor: '#ef4444',
-    activeClass: 'border-red-500 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300',
+    icon: XCircle,
+    iconClass: 'text-red-500',
+    activeClass: 'border-red-500 bg-red-500/10 text-red-600 dark:text-red-400',
   },
 ]
 

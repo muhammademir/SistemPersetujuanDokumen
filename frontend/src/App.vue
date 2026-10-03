@@ -1,10 +1,8 @@
 <template>
-  <Toast position="top-right" />
-  <ConfirmDialog />
+  <Toaster position="top-right" richColors />
   <router-view />
 </template>
 
 <script setup lang="ts">
-import Toast from 'primevue/toast'
-import ConfirmDialog from 'primevue/confirmdialog'
+import { Toaster } from '@/components/ui/sonner'
 </script>

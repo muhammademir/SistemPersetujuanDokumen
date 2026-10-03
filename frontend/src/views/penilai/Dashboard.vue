@@ -1,43 +1,48 @@
 <template>
   <div class="max-w-[1240px] mx-auto flex flex-col gap-6">
     <!-- Header Hero Banner Card -->
-    <Card class="bg-surface-900 text-surface-0 border border-surface-800 shadow-md">
-      <template #content>
+    <Card class="bg-neutral-950 text-white border-neutral-800 shadow-md">
+      <CardContent class="p-6">
         <div class="flex items-start justify-between gap-6 flex-wrap">
           <div>
-            <div class="w-8 h-8 rounded-lg bg-primary-500 flex items-center justify-center text-surface-900 font-bold mb-3">
-              <i class="pi pi-shield text-lg"></i>
+            <div class="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center font-bold mb-3">
+              <Shield class="w-4 h-4" />
             </div>
-            <h1 class="font-brand text-2xl sm:text-3xl font-bold leading-tight mb-2">
+            <h1 class="text-2xl sm:text-3xl font-bold leading-tight mb-2">
               Panel Penilai Persetujuan Dokumen
             </h1>
-            <p class="text-xs sm:text-sm text-surface-300 max-w-[540px] leading-relaxed">
+            <p class="text-xs sm:text-sm text-neutral-300 max-w-[540px] leading-relaxed">
               Verifikasi kelayakan administratif dan teknis permohonan dokumen. Berikan keputusan Disetujui, Permintaan Revisi, atau Penolakan secara akurat.
             </p>
           </div>
 
           <div class="flex items-center gap-3">
-            <div class="text-center px-4 py-3 border border-surface-700 rounded-lg bg-surface-800/80">
+            <div class="text-center px-4 py-3 border border-neutral-800 rounded-lg bg-neutral-900/80">
               <span class="block text-2xl font-bold text-amber-400 leading-tight">
                 {{ docStore.stats.submitted + docStore.stats.under_review }}
               </span>
-              <span class="block text-[10px] font-bold uppercase text-surface-400 tracking-wider mt-0.5">Antrean Perlu Review</span>
+              <span class="block text-[10px] font-bold uppercase text-neutral-400 tracking-wider mt-0.5">Antrean Perlu Review</span>
             </div>
-            <div class="text-center px-4 py-3 border border-surface-700 rounded-lg bg-surface-800/80">
+            <div class="text-center px-4 py-3 border border-neutral-800 rounded-lg bg-neutral-900/80">
               <span class="block text-2xl font-bold text-emerald-400 leading-tight">
                 {{ docStore.stats.approved }}
               </span>
-              <span class="block text-[10px] font-bold uppercase text-surface-400 tracking-wider mt-0.5">Total Disetujui</span>
+              <span class="block text-[10px] font-bold uppercase text-neutral-400 tracking-wider mt-0.5">Total Disetujui</span>
             </div>
           </div>
         </div>
-      </template>
+      </CardContent>
     </Card>
 
     <!-- Feedback Notification -->
-    <Message v-if="alertMessage" severity="success" :closable="true" @close="alertMessage = ''" class="text-xs">
-      {{ alertMessage }}
-    </Message>
+    <Alert v-if="alertMessage" class="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 flex items-center justify-between py-2.5">
+      <AlertDescription class="text-xs font-medium">
+        {{ alertMessage }}
+      </AlertDescription>
+      <Button variant="ghost" size="icon" class="h-6 w-6 text-emerald-600 hover:text-emerald-800 p-0" @click="alertMessage = ''">
+        <X class="w-3.5 h-3.5" />
+      </Button>
+    </Alert>
 
     <!-- 6 KPI Stat Summary Cards -->
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -54,72 +59,66 @@
     <!-- Workload Distribution & Priority Queue -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- Status Distribution Chart Card -->
-      <Card class="border border-surface-200 dark:border-surface-700 shadow-sm flex flex-col">
-        <template #title>
+      <Card class="flex flex-col shadow-sm border">
+        <CardHeader class="pb-2">
           <div class="flex items-center justify-between">
-            <h2 class="font-brand text-base font-bold text-surface-900 dark:text-surface-0">
+            <CardTitle class="text-base font-bold">
               Status Beban Permohonan
-            </h2>
-            <Tag :value="`${chartDataTotal} Berkas`" severity="secondary" rounded />
+            </CardTitle>
+            <Badge variant="secondary" class="text-xs font-semibold">
+              {{ chartDataTotal }} Berkas
+            </Badge>
           </div>
-        </template>
-        <template #subtitle>
-          <span class="text-xs text-surface-500">Statistik permohonan yang masuk ke sistem</span>
-        </template>
-        <template #content>
-          <div class="flex-1 flex items-center justify-center min-h-[220px]">
-            <apexchart
-              v-if="chartReady && chartDataTotal > 0"
-              type="bar"
-              width="100%"
-              height="240"
-              :options="barChartOptions"
-              :series="barChartSeries"
-            />
-            <div v-else class="flex flex-col items-center justify-center text-surface-400 text-xs gap-2 py-8">
-              <i class="pi pi-chart-bar text-3xl"></i>
-              <span>Memuat grafik statistik...</span>
-            </div>
+          <CardDescription class="text-xs">Statistik permohonan yang masuk ke sistem</CardDescription>
+        </CardHeader>
+        <CardContent class="flex-1 flex items-center justify-center min-h-[220px] p-4">
+          <apexchart
+            v-if="chartReady && chartDataTotal > 0"
+            type="bar"
+            width="100%"
+            height="240"
+            :options="barChartOptions"
+            :series="barChartSeries"
+          />
+          <div v-else class="flex flex-col items-center justify-center text-muted-foreground text-xs gap-2 py-8">
+            <BarChart3 class="w-8 h-8" />
+            <span>Memuat grafik statistik...</span>
           </div>
-        </template>
+        </CardContent>
       </Card>
 
       <!-- Quick Pending Review List Card -->
-      <Card class="lg:col-span-2 border border-surface-200 dark:border-surface-700 shadow-sm flex flex-col">
-        <template #title>
+      <Card class="lg:col-span-2 flex flex-col shadow-sm border">
+        <CardHeader class="pb-2">
           <div class="flex items-center justify-between">
-            <div>
-              <h2 class="font-brand text-base font-bold text-surface-900 dark:text-surface-0">
-                Antrean Menunggu Verifikasi
-              </h2>
-            </div>
-            <Tag
-              :value="`${docStore.pendingApplications.length} Menunggu`"
-              severity="warn"
-              class="font-bold text-xs"
-            />
+            <CardTitle class="text-base font-bold">
+              Antrean Menunggu Verifikasi
+            </CardTitle>
+            <Badge variant="secondary" class="bg-amber-500/10 text-amber-600 border-amber-500/30 text-xs font-bold">
+              {{ docStore.pendingApplications.length }} Menunggu
+            </Badge>
           </div>
-        </template>
-        <template #subtitle>
-          <span class="text-xs text-surface-500">Daftar permohonan prioritas yang membutuhkan tindakan penilaian</span>
-        </template>
-        <template #content>
-          <div class="flex-1 flex flex-col divide-y divide-surface-200 dark:divide-surface-700">
+          <CardDescription class="text-xs">Daftar permohonan prioritas yang membutuhkan tindakan penilaian</CardDescription>
+        </CardHeader>
+        <CardContent class="flex-1 p-4 pt-0">
+          <div class="flex-1 flex flex-col divide-y">
             <div
               v-for="app in docStore.pendingApplications.slice(0, 6)"
               :key="app.id"
-              class="py-3 flex items-center justify-between gap-3 hover:bg-surface-50 dark:hover:bg-surface-800/50 px-2 -mx-2 rounded-lg transition-colors"
+              class="py-3 flex items-center justify-between gap-3 hover:bg-muted/50 px-2 -mx-2 rounded-lg transition-colors"
             >
               <div class="flex items-center gap-3 min-w-0">
-                <Tag :value="app.document_type" severity="info" class="text-[10px] font-bold uppercase" />
+                <Badge variant="secondary" class="text-[10px] font-bold uppercase shrink-0">
+                  {{ app.document_type }}
+                </Badge>
                 <div class="flex flex-col min-w-0">
                   <span
-                    class="text-xs font-bold text-surface-900 dark:text-surface-0 truncate cursor-pointer hover:text-primary-600 transition-colors"
+                    class="text-xs font-bold text-foreground truncate cursor-pointer hover:text-primary transition-colors"
                     @click="openDetailModal(app)"
                   >
                     {{ app.title }}
                   </span>
-                  <span class="text-[11px] text-surface-500 flex items-center gap-1.5 mt-0.5">
+                  <span class="text-[11px] text-muted-foreground flex items-center gap-1.5 mt-0.5">
                     <span class="font-mono">{{ app.code }}</span>
                     · Pemohon: {{ app.applicant?.name || '-' }}
                     · {{ formatDate(app.submitted_at || app.created_at) }}
@@ -127,155 +126,198 @@
                 </div>
               </div>
 
-              <div class="flex items-center gap-2 flex-shrink-0">
+              <div class="flex items-center gap-2 shrink-0">
                 <Button
-                  label="Tinjau"
-                  icon="pi pi-check-square"
-                  size="small"
-                  severity="primary"
-                  class="text-xs font-bold"
+                  size="sm"
+                  class="text-xs font-bold gap-1.5 h-8"
                   @click="openReviewModal(app)"
-                />
+                >
+                  <CheckSquare class="w-3.5 h-3.5" />
+                  <span>Tinjau</span>
+                </Button>
               </div>
             </div>
 
-            <div v-if="!docStore.pendingApplications.length" class="flex flex-col items-center justify-center py-12 text-surface-400 text-xs gap-2">
-              <i class="pi pi-check-circle text-3xl text-emerald-500"></i>
-              <span class="font-semibold text-surface-800 dark:text-surface-200">Semua permohonan sudah selesai ditinjau</span>
+            <div v-if="!docStore.pendingApplications.length" class="flex flex-col items-center justify-center py-12 text-muted-foreground text-xs gap-2">
+              <CheckCircle2 class="w-8 h-8 text-emerald-500" />
+              <span class="font-semibold text-foreground">Semua permohonan sudah selesai ditinjau</span>
               <span>Tidak ada permohonan yang menunggu verifikasi saat ini.</span>
             </div>
           </div>
-        </template>
+        </CardContent>
       </Card>
     </div>
 
-    <!-- Comprehensive Applications Table with PrimeVue DataTable -->
-    <Card class="border border-surface-200 dark:border-surface-700 shadow-sm">
-      <template #title>
+    <!-- Comprehensive Applications Table -->
+    <Card class="shadow-sm border">
+      <CardHeader>
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 class="font-brand text-lg font-bold text-surface-900 dark:text-surface-0">Seluruh Data Permohonan</h2>
-            <p class="text-xs text-surface-500 font-normal">Tinjau, cari, filter, dan telusuri seluruh riwayat pengajuan dokumen</p>
+            <CardTitle class="text-lg font-bold">Seluruh Data Permohonan</CardTitle>
+            <CardDescription class="text-xs">Tinjau, cari, filter, dan telusuri seluruh riwayat pengajuan dokumen</CardDescription>
           </div>
 
           <div class="flex items-center gap-2 flex-wrap">
-            <IconField>
-              <InputIcon class="pi pi-search" />
-              <InputText
+            <div class="relative">
+              <Search class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+              <Input
                 v-model="searchQuery"
                 placeholder="Cari kode atau judul..."
-                class="w-56 text-xs"
+                class="w-56 h-8 text-xs pl-8"
               />
-            </IconField>
+            </div>
 
-            <Select
-              v-model="selectedType"
-              :options="documentTypeOptions"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Semua Jenis"
-              class="w-40 text-xs"
-            />
+            <Select v-model="selectedType">
+              <SelectTrigger class="w-40 h-8 text-xs">
+                <SelectValue placeholder="Semua Jenis" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="opt in documentTypeOptions" :key="opt.value" :value="opt.value">
+                  {{ opt.label }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
-      </template>
+      </CardHeader>
 
-      <template #content>
+      <CardContent class="pt-0">
         <!-- Filter Tabs / Buttons -->
-        <div class="flex gap-2 overflow-x-auto pb-3 mb-4 border-b border-surface-200 dark:border-surface-700 text-xs">
+        <div class="flex gap-2 overflow-x-auto pb-3 mb-4 border-b text-xs">
           <Button
             v-for="tab in filterTabs"
             :key="tab.value"
-            :label="tab.label"
-            :badge="String(tab.count)"
-            :badgeSeverity="activeStatusFilter === tab.value ? 'primary' : 'secondary'"
-            :severity="activeStatusFilter === tab.value ? 'primary' : 'secondary'"
-            :outlined="activeStatusFilter !== tab.value"
-            size="small"
-            class="text-xs whitespace-nowrap"
+            size="sm"
+            :variant="activeStatusFilter === tab.value ? 'default' : 'outline'"
+            class="text-xs whitespace-nowrap h-7 px-2.5 gap-1.5"
             @click="activeStatusFilter = tab.value"
-          />
+          >
+            <span>{{ tab.label }}</span>
+            <Badge
+              :variant="activeStatusFilter === tab.value ? 'secondary' : 'outline'"
+              class="text-[10px] h-4 px-1"
+            >
+              {{ tab.count }}
+            </Badge>
+          </Button>
         </div>
 
-        <!-- PrimeVue DataTable -->
-        <DataTable
-          :value="filteredApplications"
-          paginator
-          :rows="10"
-          :rowsPerPageOptions="[5, 10, 20, 50]"
-          responsiveLayout="scroll"
-          class="text-xs"
-          stripedRows
-        >
-          <template #empty>
-            <div class="flex flex-col items-center justify-center py-12 text-surface-400 text-xs gap-2">
-              <i class="pi pi-folder-open text-4xl"></i>
-              <span>Tidak ada permohonan yang sesuai filter atau kata kunci.</span>
-            </div>
-          </template>
+        <!-- shadcn-vue Table -->
+        <div class="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead class="text-xs font-bold min-w-[260px]">Kode / Dokumen</TableHead>
+                <TableHead class="text-xs font-bold min-w-[180px]">Pemohon</TableHead>
+                <TableHead class="text-xs font-bold min-w-[140px]">Tanggal Masuk</TableHead>
+                <TableHead class="text-xs font-bold min-w-[150px]">Status</TableHead>
+                <TableHead class="text-xs font-bold text-right min-w-[160px]">Aksi</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <template v-if="paginatedApplications.length">
+                <TableRow
+                  v-for="data in paginatedApplications"
+                  :key="data.id"
+                  class="hover:bg-muted/50"
+                >
+                  <TableCell>
+                    <div class="flex flex-col">
+                      <div class="flex items-center gap-1.5 mb-1">
+                        <span class="font-mono text-muted-foreground text-[11px]">{{ data.code }}</span>
+                        <Badge variant="outline" class="text-[9px] font-bold uppercase">
+                          {{ data.document_type }}
+                        </Badge>
+                        <Badge v-if="data.revision_count > 0" variant="secondary" class="text-[9px] font-bold text-amber-600 bg-amber-500/10">
+                          Rev #{{ data.revision_count }}
+                        </Badge>
+                      </div>
+                      <span
+                        class="font-bold text-foreground text-xs hover:text-primary cursor-pointer transition-colors"
+                        @click="openDetailModal(data)"
+                      >
+                        {{ data.title }}
+                      </span>
+                    </div>
+                  </TableCell>
 
-          <Column header="Kode / Dokumen" style="min-width: 260px">
-            <template #body="{ data }">
-              <div class="flex flex-col">
-                <div class="flex items-center gap-2 mb-1">
-                  <span class="font-mono text-surface-500 text-[11px]">{{ data.code }}</span>
-                  <Tag :value="data.document_type" severity="info" class="text-[9px] font-bold uppercase" />
-                  <Tag v-if="data.revision_count > 0" :value="`Rev #${data.revision_count}`" severity="warn" class="text-[9px] font-bold" />
-                </div>
-                <span class="font-bold text-surface-900 dark:text-surface-0 text-xs hover:text-primary-600 cursor-pointer" @click="openDetailModal(data)">
-                  {{ data.title }}
-                </span>
-              </div>
-            </template>
-          </Column>
+                  <TableCell>
+                    <div class="flex flex-col">
+                      <span class="font-semibold text-foreground text-xs">{{ data.applicant?.name || '-' }}</span>
+                      <span class="text-muted-foreground text-[11px]">{{ data.applicant?.email || '' }}</span>
+                    </div>
+                  </TableCell>
 
-          <Column header="Pemohon" style="min-width: 180px">
-            <template #body="{ data }">
-              <div class="flex flex-col">
-                <span class="font-semibold text-surface-800 dark:text-surface-200">{{ data.applicant?.name || '-' }}</span>
-                <span class="text-surface-500 text-[11px]">{{ data.applicant?.email || '' }}</span>
-              </div>
-            </template>
-          </Column>
+                  <TableCell class="text-muted-foreground text-xs whitespace-nowrap">
+                    {{ formatDate(data.submitted_at || data.created_at) }}
+                  </TableCell>
 
-          <Column header="Tanggal Masuk" style="min-width: 140px">
-            <template #body="{ data }">
-              <span class="text-surface-500 whitespace-nowrap">
-                {{ formatDate(data.submitted_at || data.created_at) }}
-              </span>
-            </template>
-          </Column>
+                  <TableCell>
+                    <StatusBadge :status="data.status" />
+                  </TableCell>
 
-          <Column header="Status" style="min-width: 150px">
-            <template #body="{ data }">
-              <StatusBadge :status="data.status" />
-            </template>
-          </Column>
+                  <TableCell class="text-right">
+                    <div class="flex items-center justify-end gap-1.5">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        class="h-7 px-2 text-xs font-medium gap-1 text-muted-foreground hover:text-foreground"
+                        @click="openDetailModal(data)"
+                      >
+                        <Eye class="w-3.5 h-3.5" />
+                        <span>Detail</span>
+                      </Button>
+                      <Button
+                        v-if="['submitted', 'under_review'].includes(getStatusValue(data.status))"
+                        size="sm"
+                        class="h-7 px-2.5 text-xs font-semibold gap-1"
+                        @click="openReviewModal(data)"
+                      >
+                        <CheckSquare class="w-3.5 h-3.5" />
+                        <span>Tinjau</span>
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              </template>
+              <TableRow v-else>
+                <TableCell colspan="5" class="h-32 text-center">
+                  <div class="flex flex-col items-center justify-center text-muted-foreground text-xs gap-2 py-4">
+                    <FolderOpen class="w-8 h-8" />
+                    <span>Tidak ada permohonan yang sesuai filter atau kata kunci.</span>
+                  </div>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </div>
 
-          <Column header="Aksi" style="min-width: 160px; text-align: right">
-            <template #body="{ data }">
-              <div class="flex items-center justify-end gap-1.5">
-                <Button
-                  label="Detail"
-                  icon="pi pi-eye"
-                  severity="secondary"
-                  size="small"
-                  text
-                  @click="openDetailModal(data)"
-                />
-                <Button
-                  v-if="['submitted', 'under_review'].includes(getStatusValue(data.status))"
-                  label="Tinjau"
-                  icon="pi pi-check"
-                  severity="primary"
-                  size="small"
-                  @click="openReviewModal(data)"
-                />
-              </div>
-            </template>
-          </Column>
-        </DataTable>
-      </template>
+        <!-- Pagination Controls -->
+        <div v-if="filteredApplications.length > itemsPerPage" class="flex items-center justify-between pt-4 text-xs text-muted-foreground">
+          <span>Menampilkan {{ (currentPage - 1) * itemsPerPage + 1 }} - {{ Math.min(currentPage * itemsPerPage, filteredApplications.length) }} dari {{ filteredApplications.length }} permohonan</span>
+          <div class="flex items-center gap-1.5">
+            <Button
+              variant="outline"
+              size="icon"
+              class="h-7 w-7"
+              :disabled="currentPage <= 1"
+              @click="currentPage--"
+            >
+              <ChevronLeft class="w-3.5 h-3.5" />
+            </Button>
+            <span class="px-2 font-medium">{{ currentPage }} / {{ totalPages }}</span>
+            <Button
+              variant="outline"
+              size="icon"
+              class="h-7 w-7"
+              :disabled="currentPage >= totalPages"
+              @click="currentPage++"
+            >
+              <ChevronRight class="w-3.5 h-3.5" />
+            </Button>
+          </div>
+        </div>
+      </CardContent>
     </Card>
 
     <!-- Modular Review Decision Modal -->
@@ -297,16 +339,38 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import Card from 'primevue/card'
-import Button from 'primevue/button'
-import Tag from 'primevue/tag'
-import Message from 'primevue/message'
-import DataTable from 'primevue/datatable'
-import Column from 'primevue/column'
-import IconField from 'primevue/iconfield'
-import InputIcon from 'primevue/inputicon'
-import InputText from 'primevue/inputtext'
-import Select from 'primevue/select'
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from '@/components/ui/table'
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select'
+import {
+  Shield,
+  X,
+  BarChart3,
+  CheckSquare,
+  CheckCircle2,
+  Search,
+  Eye,
+  FolderOpen,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-vue-next'
 import { useDocumentStore } from '@/stores/document'
 import StatCard from '@/components/StatCard.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
@@ -319,9 +383,12 @@ const docStore = useDocumentStore()
 
 const activeStatusFilter = ref('all')
 const searchQuery = ref('')
-const selectedType = ref('')
+const selectedType = ref('all')
 const chartReady = ref(false)
 const alertMessage = ref('')
+
+const currentPage = ref(1)
+const itemsPerPage = ref(10)
 
 const showDetailModal = ref(false)
 const selectedApplication = ref<Application | null>(null)
@@ -330,7 +397,7 @@ const showReviewModal = ref(false)
 const reviewTargetApp = ref<Application | null>(null)
 
 const documentTypeOptions = [
-  { label: 'Semua Jenis', value: '' },
+  { label: 'Semua Jenis', value: 'all' },
   { label: 'SLF', value: 'SLF' },
   { label: 'AMDAL', value: 'AMDAL' },
   { label: 'IMB', value: 'IMB' },
@@ -361,7 +428,7 @@ const filteredApplications = computed(() => {
   return docStore.applications.filter((app) => {
     const statusVal = getStatusValue(app.status)
     const matchesStatus = activeStatusFilter.value === 'all' || statusVal === activeStatusFilter.value
-    const matchesType = !selectedType.value || app.document_type === selectedType.value
+    const matchesType = selectedType.value === 'all' || !selectedType.value || app.document_type === selectedType.value
     const matchesSearch =
       !query ||
       app.title.toLowerCase().includes(query) ||
@@ -369,6 +436,13 @@ const filteredApplications = computed(() => {
       (app.applicant?.name && app.applicant.name.toLowerCase().includes(query))
     return matchesStatus && matchesSearch && matchesType
   })
+})
+
+const totalPages = computed(() => Math.ceil(filteredApplications.value.length / itemsPerPage.value) || 1)
+
+const paginatedApplications = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value
+  return filteredApplications.value.slice(start, start + itemsPerPage.value)
 })
 
 const chartDataTotal = computed(() => {

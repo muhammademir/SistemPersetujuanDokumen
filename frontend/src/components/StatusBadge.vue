@@ -1,14 +1,25 @@
 <template>
-  <Tag :severity="severity" :value="statusLabel" class="uppercase text-[11px] font-bold tracking-wider px-2.5 py-0.5" rounded>
-    <template #icon>
-      <i :class="iconClass" class="mr-1 text-[10px]"></i>
-    </template>
-  </Tag>
+  <span
+    :class="[
+      'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-wide border transition-colors',
+      badgeStyle.classes
+    ]"
+  >
+    <component :is="badgeStyle.icon" class="w-3.5 h-3.5 shrink-0" />
+    <span>{{ statusLabel }}</span>
+  </span>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import Tag from 'primevue/tag'
+import {
+  CheckCircle2,
+  Clock,
+  Search,
+  XCircle,
+  AlertTriangle,
+  FileText
+} from 'lucide-vue-next'
 import type { ApplicationStatus, ApplicationStatusObj } from '@/types'
 
 const props = defineProps<{
@@ -40,44 +51,41 @@ const statusLabel = computed<string>(() => {
   return map[statusValue.value] ?? statusValue.value
 })
 
-const severity = computed(() => {
-  const val = statusValue.value
-  switch (val) {
+const badgeStyle = computed(() => {
+  switch (statusValue.value) {
     case 'approved':
-      return 'success'
+      return {
+        icon: CheckCircle2,
+        classes: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+      }
     case 'submitted':
     case 'pending':
+      return {
+        icon: Clock,
+        classes: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
+      }
+    case 'under_review':
+      return {
+        icon: Search,
+        classes: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'
+      }
     case 'revision_required':
     case 'revision':
-      return 'warn'
-    case 'under_review':
-      return 'info'
+      return {
+        icon: AlertTriangle,
+        classes: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20'
+      }
     case 'rejected':
-      return 'danger'
+      return {
+        icon: XCircle,
+        classes: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20'
+      }
     case 'draft':
     default:
-      return 'secondary'
-  }
-})
-
-const iconClass = computed(() => {
-  const val = statusValue.value
-  switch (val) {
-    case 'approved':
-      return 'pi pi-check-circle'
-    case 'submitted':
-    case 'pending':
-      return 'pi pi-clock'
-    case 'under_review':
-      return 'pi pi-search'
-    case 'revision_required':
-    case 'revision':
-      return 'pi pi-pencil'
-    case 'rejected':
-      return 'pi pi-times-circle'
-    case 'draft':
-    default:
-      return 'pi pi-file-edit'
+      return {
+        icon: FileText,
+        classes: 'bg-muted text-muted-foreground border-border'
+      }
   }
 })
 </script>

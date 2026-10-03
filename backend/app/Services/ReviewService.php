@@ -14,11 +14,27 @@ class ReviewService
     public function decide(Application $application, User $reviewer, string $decision, string $note): Application
     {
         return DB::transaction(function () use ($application, $reviewer, $decision, $note) {
-            // Lock baris supaya dua penilai tidak memutuskan bersamaan
             $application = Application::lockForUpdate()->findOrFail($application->id);
 
             $from = $application->status;
             $to   = ApplicationStatus::from($decision);
+            if ($from === ApplicationStatus::Submitted && $from !== $to) {
+                $intermediate = ApplicationStatus::UnderReview;
+                if ($from->canTransitionTo($intermediate)) {
+                    $application->update(['status' => $intermediate]);
+
+                    ApplicationStatusLog::create([
+                        'application_id' => $application->id,
+                        'actor_id'       => $reviewer->id,
+                        'from_status'    => $from->value,
+                        'to_status'      => $intermediate->value,
+                        'note'           => 'Auto: mulai peninjauan',
+                        'metadata'       => ['ip' => request()->ip()],
+                    ]);
+
+                    $from = $intermediate;
+                }
+            }
 
             if (! $from->canTransitionTo($to)) {
                 throw new \InvalidArgumentException(

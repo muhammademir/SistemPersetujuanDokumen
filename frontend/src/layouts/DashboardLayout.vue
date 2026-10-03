@@ -1,75 +1,75 @@
 <template>
-  <div class="flex min-h-screen bg-surface-50 dark:bg-surface-950">
+  <div class="flex min-h-screen bg-background">
     <!-- Sidebar -->
     <aside
-      class="fixed top-0 left-0 bottom-0 z-40 w-[260px] bg-surface-900 text-surface-0 flex flex-col transition-transform duration-300 border-r border-surface-800"
+      class="fixed top-0 left-0 bottom-0 z-40 w-[260px] bg-neutral-950 text-white flex flex-col transition-transform duration-300 border-r border-neutral-800"
       :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
     >
       <!-- Brand Header -->
-      <div class="flex items-center gap-3 px-5 py-5 border-b border-surface-800">
-        <div class="w-8 h-8 rounded-lg bg-primary-500 flex items-center justify-center flex-shrink-0 text-surface-900 font-bold">
-          <i class="pi pi-file-check text-lg"></i>
+      <div class="flex items-center gap-3 px-5 py-5 border-b border-neutral-800">
+        <div class="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shrink-0 font-bold">
+          <FileCheck class="w-4 h-4" />
         </div>
         <div class="flex flex-col flex-1">
-          <span class="text-base font-bold leading-tight tracking-tight font-brand">SiPerDok</span>
-          <span class="text-[10px] font-bold uppercase text-primary-400 tracking-wider mt-0.5">{{ roleLabel }}</span>
+          <span class="text-base font-bold leading-tight tracking-tight">SiPerDok</span>
+          <span class="text-[10px] font-bold uppercase text-primary tracking-wider mt-0.5">{{ roleLabel }}</span>
         </div>
         <Button
-          icon="pi pi-times"
-          severity="secondary"
-          text
-          rounded
-          class="lg:hidden text-surface-400 hover:text-surface-0"
+          variant="ghost"
+          size="icon"
+          class="lg:hidden text-neutral-400 hover:text-white hover:bg-neutral-800 w-8 h-8"
           @click="sidebarOpen = false"
-        />
+        >
+          <X class="w-4 h-4" />
+        </Button>
       </div>
 
       <!-- Navigation Links -->
       <nav class="flex-1 px-3 py-4 flex flex-col gap-1.5 overflow-y-auto">
-        <span class="block px-3 pb-2 text-[10px] font-bold uppercase text-surface-400 tracking-widest">MENU UTAMA</span>
+        <span class="block px-3 pb-2 text-[10px] font-bold uppercase text-neutral-400 tracking-widest">MENU UTAMA</span>
         <router-link
           v-for="item in navItems"
           :key="item.path"
           :to="item.path"
-          class="group relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-surface-300 text-xs font-semibold no-underline transition-all hover:bg-surface-800 hover:text-surface-0"
-          active-class="!bg-surface-800 !text-surface-0 font-bold"
+          class="group relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-300 text-xs font-semibold no-underline transition-all hover:bg-neutral-850 hover:text-white"
+          active-class="!bg-neutral-800 !text-white font-bold"
           @click="sidebarOpen = false"
         >
-          <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-primary-500 rounded-r-md opacity-0 group-[.router-link-active]:opacity-100 transition-opacity"></div>
-          <i :class="item.icon" class="text-sm w-5 text-center flex-shrink-0"></i>
+          <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-primary rounded-r-md opacity-0 group-[.router-link-active]:opacity-100 transition-opacity"></div>
+          <component :is="item.icon" class="w-4 h-4 shrink-0 text-neutral-400 group-hover:text-white group-[.router-link-active]:text-primary" />
           <span class="flex-1">{{ item.label }}</span>
           <Badge
             v-if="item.badge"
-            :value="item.badge"
-            severity="warn"
-            size="small"
-            class="text-[10px]"
-          />
+            variant="secondary"
+            class="text-[10px] bg-amber-500/20 text-amber-400 border-amber-500/30"
+          >
+            {{ item.badge }}
+          </Badge>
         </router-link>
       </nav>
 
       <!-- Sidebar footer / user info -->
-      <div class="flex items-center justify-between px-5 py-4 border-t border-surface-800 bg-surface-900">
+      <div class="flex items-center justify-between px-5 py-4 border-t border-neutral-800 bg-neutral-950">
         <div class="flex items-center gap-2.5 flex-1 min-w-0">
-          <Avatar
-            :label="authStore.userInitials"
-            shape="circle"
-            class="bg-primary-500 text-surface-900 font-bold text-xs"
-          />
+          <Avatar class="h-8 w-8 bg-primary text-primary-foreground font-bold text-xs">
+            <AvatarFallback class="bg-primary text-primary-foreground font-bold text-xs">
+              {{ authStore.userInitials }}
+            </AvatarFallback>
+          </Avatar>
           <div class="flex flex-col min-w-0">
-            <span class="text-xs font-bold truncate text-surface-0">{{ authStore.userName }}</span>
-            <span class="text-[10px] text-surface-400 truncate capitalize">{{ authStore.userRole }}</span>
+            <span class="text-xs font-bold truncate text-white">{{ authStore.userName }}</span>
+            <span class="text-[10px] text-neutral-400 truncate capitalize">{{ authStore.userRole }}</span>
           </div>
         </div>
         <Button
-          icon="pi pi-power-off"
-          severity="danger"
-          text
-          rounded
-          size="small"
-          v-tooltip.top="'Keluar'"
+          variant="ghost"
+          size="icon"
+          class="text-neutral-400 hover:text-red-400 hover:bg-neutral-900 w-8 h-8"
+          title="Keluar"
           @click="handleLogout"
-        />
+        >
+          <LogOut class="w-4 h-4" />
+        </Button>
       </div>
     </aside>
 
@@ -83,52 +83,57 @@
     <!-- Main Content Area -->
     <div class="flex-1 flex flex-col min-h-screen ml-0 lg:ml-[260px] transition-[margin] duration-300">
       <!-- Topbar Header -->
-      <header class="sticky top-0 z-30 flex items-center justify-between h-14 px-6 bg-surface-0 dark:bg-surface-900 border-b border-surface-200 dark:border-surface-800">
+      <header class="sticky top-0 z-30 flex items-center justify-between h-14 px-6 bg-card border-b">
         <div class="flex items-center gap-3">
           <Button
-            icon="pi pi-bars"
-            severity="secondary"
-            text
-            rounded
-            class="lg:hidden"
+            variant="ghost"
+            size="icon"
+            class="lg:hidden w-8 h-8"
             @click="sidebarOpen = true"
-          />
-          <span class="text-sm font-bold text-surface-800 dark:text-surface-100">{{ currentPageTitle }}</span>
+          >
+            <Menu class="w-4 h-4" />
+          </Button>
+          <span class="text-sm font-bold text-foreground">{{ currentPageTitle }}</span>
         </div>
 
         <!-- User Profile Dropdown Button -->
-        <div class="flex items-center gap-2">
-          <Button
-            type="button"
-            severity="secondary"
-            text
-            class="flex items-center gap-2 p-1.5 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-800"
-            @click="toggleUserMenu"
-            aria-haspopup="true"
-            aria-controls="overlay_user_menu"
-          >
-            <Avatar
-              :label="authStore.userInitials"
-              shape="circle"
-              size="normal"
-              class="bg-primary-500 text-surface-900 font-bold text-xs"
-            />
-            <span class="hidden sm:block text-xs font-semibold text-surface-800 dark:text-surface-100">
-              {{ authStore.userName }}
-            </span>
-            <i class="pi pi-chevron-down text-xs text-surface-400"></i>
-          </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger as-child>
+            <Button
+              variant="ghost"
+              size="sm"
+              class="flex items-center gap-2 px-2 py-1.5 h-auto rounded-lg hover:bg-accent"
+            >
+              <Avatar class="h-7 w-7 bg-primary text-primary-foreground">
+                <AvatarFallback class="bg-primary text-primary-foreground font-bold text-[11px]">
+                  {{ authStore.userInitials }}
+                </AvatarFallback>
+              </Avatar>
+              <span class="hidden sm:block text-xs font-semibold text-foreground">
+                {{ authStore.userName }}
+              </span>
+              <ChevronDown class="w-3.5 h-3.5 text-muted-foreground" />
+            </Button>
+          </DropdownMenuTrigger>
 
-          <Menu ref="userMenuRef" id="overlay_user_menu" :model="menuItems" :popup="true">
-            <template #start>
-              <div class="p-3 border-b border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800/60 rounded-t-lg">
-                <div class="text-xs font-bold text-surface-900 dark:text-surface-0">{{ authStore.userName }}</div>
-                <div class="text-[11px] text-surface-500 truncate mt-0.5">{{ authStore.user?.email }}</div>
-                <Tag :value="authStore.userRole" severity="info" class="mt-1 text-[9px] uppercase font-bold" />
-              </div>
-            </template>
-          </Menu>
-        </div>
+          <DropdownMenuContent align="end" class="w-56">
+            <DropdownMenuLabel class="font-normal p-3 bg-muted/40 rounded-t-md">
+              <div class="text-xs font-bold text-foreground">{{ authStore.userName }}</div>
+              <div class="text-[11px] text-muted-foreground truncate mt-0.5">{{ authStore.user?.email }}</div>
+              <Badge variant="secondary" class="mt-1.5 text-[9px] uppercase font-bold">
+                {{ authStore.userRole }}
+              </Badge>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              class="text-xs font-semibold text-destructive cursor-pointer focus:text-destructive focus:bg-destructive/10"
+              @click="handleLogout"
+            >
+              <LogOut class="w-4 h-4 mr-2" />
+              <span>Keluar dari Akun</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </header>
 
       <!-- Main View Content -->
@@ -146,11 +151,28 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import Avatar from 'primevue/avatar'
-import Badge from 'primevue/badge'
-import Button from 'primevue/button'
-import Menu from 'primevue/menu'
-import Tag from 'primevue/tag'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu'
+import {
+  FileCheck,
+  X,
+  Menu,
+  ChevronDown,
+  LogOut,
+  LayoutDashboard,
+  Inbox,
+  History,
+  PlusCircle,
+} from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import { useDocumentStore } from '@/stores/document'
 
@@ -159,7 +181,6 @@ const docStore = useDocumentStore()
 const route = useRoute()
 
 const sidebarOpen = ref(false)
-const userMenuRef = ref()
 
 const roleLabel = computed(() => (authStore.isPenilai ? 'Panel Penilai' : 'Panel Pemohon'))
 
@@ -177,34 +198,16 @@ const currentPageTitle = computed(() => {
 const navItems = computed(() => {
   if (authStore.isPenilai) {
     return [
-      { path: '/penilai/dashboard', label: 'Dashboard Utama', icon: 'pi pi-th-large', badge: null },
-      { path: '/penilai/review', label: 'Antrean Penilaian', icon: 'pi pi-inbox', badge: docStore.pendingApplications.length || null },
-      { path: '/penilai/history', label: 'Riwayat Penilaian', icon: 'pi pi-history', badge: null },
+      { path: '/penilai/dashboard', label: 'Dashboard Utama', icon: LayoutDashboard, badge: null },
+      { path: '/penilai/review', label: 'Antrean Penilaian', icon: Inbox, badge: docStore.pendingApplications.length || null },
+      { path: '/penilai/history', label: 'Riwayat Penilaian', icon: History, badge: null },
     ]
   }
   return [
-    { path: '/pemohon/dashboard', label: 'Dashboard & Permohonan', icon: 'pi pi-th-large', badge: null },
-    { path: '/pemohon/submit', label: 'Buat Permohonan Baru', icon: 'pi pi-plus-circle', badge: null },
+    { path: '/pemohon/dashboard', label: 'Dashboard & Permohonan', icon: LayoutDashboard, badge: null },
+    { path: '/pemohon/submit', label: 'Buat Permohonan Baru', icon: PlusCircle, badge: null },
   ]
 })
-
-const menuItems = computed(() => [
-  {
-    separator: true,
-  },
-  {
-    label: 'Keluar dari Akun',
-    icon: 'pi pi-power-off',
-    class: 'text-red-500 font-semibold text-xs',
-    command: () => {
-      handleLogout()
-    },
-  },
-])
-
-function toggleUserMenu(event: Event) {
-  userMenuRef.value.toggle(event)
-}
 
 function handleLogout() {
   authStore.logout()

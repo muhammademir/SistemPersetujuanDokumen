@@ -1,66 +1,64 @@
 <template>
   <Card
-    class="cursor-pointer transition-all hover:shadow-md hover:border-primary-400 border border-surface-200 dark:border-surface-700 flex flex-col justify-between h-full"
+    class="cursor-pointer transition-all hover:shadow-md hover:border-primary/50 flex flex-col justify-between h-full group"
     @click="$emit('click', application)"
   >
-    <template #header>
-      <div class="p-4 pb-0 flex items-center justify-between gap-2">
-        <StatusBadge :status="application.status" />
-        <span class="text-xs text-surface-500 font-mono">{{ application.code || formattedDate }}</span>
+    <CardHeader class="p-4 pb-0 flex flex-row items-center justify-between gap-2 space-y-0">
+      <StatusBadge :status="application.status" />
+      <span class="text-xs text-muted-foreground font-mono">{{ application.code || formattedDate }}</span>
+    </CardHeader>
+
+    <CardContent class="p-4 pt-3 space-y-3">
+      <div class="flex items-center gap-1.5 flex-wrap">
+        <Badge variant="secondary" class="text-[10px] font-semibold">
+          {{ application.document_type || 'DOKUMEN' }}
+        </Badge>
+        <Badge
+          v-if="application.revision_count > 0"
+          variant="outline"
+          class="text-[10px] font-semibold text-amber-600 border-amber-500/30 bg-amber-500/10"
+        >
+          Revisi #{{ application.revision_count }}
+        </Badge>
       </div>
-    </template>
 
-    <template #content>
-      <div class="space-y-3">
-        <div class="flex items-center gap-2">
-          <Tag :value="application.document_type || 'DOKUMEN'" severity="info" class="text-[10px] font-bold" />
-          <Tag
-            v-if="application.revision_count > 0"
-            :value="`Revisi #${application.revision_count}`"
-            severity="warn"
-            class="text-[10px] font-bold"
-          />
-        </div>
+      <h3 class="text-base font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
+        {{ application.title }}
+      </h3>
 
-        <h3 class="font-brand text-base font-bold text-surface-900 dark:text-surface-0 hover:text-primary-600 transition-colors line-clamp-1">
-          {{ application.title }}
-        </h3>
+      <p class="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+        {{ application.description || 'Tidak ada keterangan tambahan.' }}
+      </p>
+    </CardContent>
 
-        <p class="text-xs text-surface-600 dark:text-surface-400 line-clamp-2 leading-relaxed">
-          {{ application.description || 'Tidak ada keterangan tambahan.' }}
-        </p>
+    <CardFooter class="p-4 pt-0 flex items-center justify-between border-t mt-auto pt-3">
+      <div class="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <Paperclip class="w-3.5 h-3.5" />
+        <span>{{ application.documents_count ?? (application.documents?.length || 0) }} Berkas</span>
+        <span v-if="application.applicant?.name" class="truncate max-w-[120px]">
+          · {{ application.applicant.name }}
+        </span>
       </div>
-    </template>
 
-    <template #footer>
-      <div class="flex items-center justify-between border-t border-surface-200 dark:border-surface-700 pt-3">
-        <div class="flex items-center gap-1.5 text-xs text-surface-500">
-          <i class="pi pi-paperclip text-xs"></i>
-          <span>{{ application.documents_count ?? (application.documents?.length || 0) }} Berkas</span>
-          <span v-if="application.applicant?.name" class="truncate max-w-[120px]">
-            · {{ application.applicant.name }}
-          </span>
-        </div>
-
-        <Button
-          :label="computedActionLabel"
-          icon="pi pi-arrow-right"
-          iconPos="right"
-          size="small"
-          text
-          class="p-0 text-xs font-bold"
-          @click.stop="$emit('action', application)"
-        />
-      </div>
-    </template>
+      <Button
+        variant="ghost"
+        size="sm"
+        class="h-7 px-2 text-xs font-semibold gap-1 text-primary hover:text-primary"
+        @click.stop="$emit('action', application)"
+      >
+        <span>{{ computedActionLabel }}</span>
+        <ArrowRight class="w-3.5 h-3.5" />
+      </Button>
+    </CardFooter>
   </Card>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import Card from 'primevue/card'
-import Tag from 'primevue/tag'
-import Button from 'primevue/button'
+import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Paperclip, ArrowRight } from 'lucide-vue-next'
 import type { Application } from '@/types'
 import StatusBadge from './StatusBadge.vue'
 import { formatDate, getStatusValue } from '@/utils/formatters'

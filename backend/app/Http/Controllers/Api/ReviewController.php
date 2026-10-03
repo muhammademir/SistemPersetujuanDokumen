@@ -20,12 +20,16 @@ class ReviewController extends Controller
             'note'     => ['nullable', 'string'],
         ]);
 
-        $updatedApp = $this->service->decide(
-            $application,
-            $request->user(),
-            $validated['decision'],
-            $validated['note'] ?? ''
-        );
+        try {
+            $updatedApp = $this->service->decide(
+                $application,
+                $request->user(),
+                $validated['decision'],
+                $validated['note'] ?? ''
+            );
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
 
         return new ApplicationResource($updatedApp);
     }
