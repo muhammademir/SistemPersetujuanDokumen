@@ -1,15 +1,14 @@
 <template>
-  <span
-    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm text-xs font-bold uppercase tracking-wide border transition-all"
-    :class="badgeClasses"
-  >
-    <span class="w-1.5 h-1.5 rounded-full flex-shrink-0" :class="dotClass"></span>
-    <span>{{ statusLabel }}</span>
-  </span>
+  <Tag :severity="severity" :value="statusLabel" class="uppercase text-[11px] font-bold tracking-wider px-2.5 py-0.5" rounded>
+    <template #icon>
+      <i :class="iconClass" class="mr-1 text-[10px]"></i>
+    </template>
+  </Tag>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import Tag from 'primevue/tag'
 import type { ApplicationStatus, ApplicationStatusObj } from '@/types'
 
 const props = defineProps<{
@@ -41,47 +40,44 @@ const statusLabel = computed<string>(() => {
   return map[statusValue.value] ?? statusValue.value
 })
 
-const badgeClasses = computed(() => {
+const severity = computed(() => {
   const val = statusValue.value
   switch (val) {
-    case 'draft':
-      return 'bg-stone/10 border-stone/30 text-stone'
+    case 'approved':
+      return 'success'
     case 'submitted':
     case 'pending':
-      return 'bg-warning/10 border-warning/30 text-warning'
-    case 'under_review':
-      return 'bg-info/10 border-info/30 text-info'
     case 'revision_required':
     case 'revision':
-      return 'bg-orange-500/10 border-orange-500/30 text-orange-600 dark:text-orange-400'
-    case 'approved':
-      return 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400'
+      return 'warn'
+    case 'under_review':
+      return 'info'
     case 'rejected':
-      return 'bg-error/10 border-error/30 text-error'
+      return 'danger'
+    case 'draft':
     default:
-      return 'bg-surface-soft border-hairline text-mute'
+      return 'secondary'
   }
 })
 
-const dotClass = computed(() => {
+const iconClass = computed(() => {
   const val = statusValue.value
   switch (val) {
-    case 'draft':
-      return 'bg-stone'
+    case 'approved':
+      return 'pi pi-check-circle'
     case 'submitted':
     case 'pending':
-      return 'bg-warning animate-pulse'
+      return 'pi pi-clock'
     case 'under_review':
-      return 'bg-info animate-pulse'
+      return 'pi pi-search'
     case 'revision_required':
     case 'revision':
-      return 'bg-orange-500'
-    case 'approved':
-      return 'bg-emerald-500'
+      return 'pi pi-pencil'
     case 'rejected':
-      return 'bg-error'
+      return 'pi pi-times-circle'
+    case 'draft':
     default:
-      return 'bg-mute'
+      return 'pi pi-file-edit'
   }
 })
 </script>

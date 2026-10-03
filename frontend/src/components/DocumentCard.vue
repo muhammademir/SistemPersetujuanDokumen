@@ -1,58 +1,66 @@
 <template>
-  <div
-    class="relative overflow-hidden bg-canvas border border-hairline rounded-sm p-6 cursor-pointer transition-all hover:border-primary hover:shadow-sm group flex flex-col justify-between"
+  <Card
+    class="cursor-pointer transition-all hover:shadow-md hover:border-primary-400 border border-surface-200 dark:border-surface-700 flex flex-col justify-between h-full"
     @click="$emit('click', application)"
   >
-    <!-- Corner square -->
-    <div class="absolute top-0 left-0 w-3 h-3 bg-primary"></div>
-
-    <div>
-      <div class="flex items-center justify-between gap-2 mb-3">
+    <template #header>
+      <div class="p-4 pb-0 flex items-center justify-between gap-2">
         <StatusBadge :status="application.status" />
-        <span class="text-xs text-mute font-mono">{{ application.code || formattedDate }}</span>
+        <span class="text-xs text-surface-500 font-mono">{{ application.code || formattedDate }}</span>
       </div>
+    </template>
 
-      <div class="flex items-center gap-2 mb-2">
-        <span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-primary/10 text-primary border border-primary/20">
-          {{ application.document_type || 'DOKUMEN' }}
-        </span>
-        <span v-if="application.revision_count > 0" class="text-[10px] font-bold text-warning">
-          (Revisi ke-{{ application.revision_count }})
-        </span>
+    <template #content>
+      <div class="space-y-3">
+        <div class="flex items-center gap-2">
+          <Tag :value="application.document_type || 'DOKUMEN'" severity="info" class="text-[10px] font-bold" />
+          <Tag
+            v-if="application.revision_count > 0"
+            :value="`Revisi #${application.revision_count}`"
+            severity="warn"
+            class="text-[10px] font-bold"
+          />
+        </div>
+
+        <h3 class="font-brand text-base font-bold text-surface-900 dark:text-surface-0 hover:text-primary-600 transition-colors line-clamp-1">
+          {{ application.title }}
+        </h3>
+
+        <p class="text-xs text-surface-600 dark:text-surface-400 line-clamp-2 leading-relaxed">
+          {{ application.description || 'Tidak ada keterangan tambahan.' }}
+        </p>
       </div>
+    </template>
 
-      <h3 class="font-brand text-base font-bold leading-snug text-ink mb-2 group-hover:text-primary transition-colors">
-        {{ application.title }}
-      </h3>
+    <template #footer>
+      <div class="flex items-center justify-between border-t border-surface-200 dark:border-surface-700 pt-3">
+        <div class="flex items-center gap-1.5 text-xs text-surface-500">
+          <i class="pi pi-paperclip text-xs"></i>
+          <span>{{ application.documents_count ?? (application.documents?.length || 0) }} Berkas</span>
+          <span v-if="application.applicant?.name" class="truncate max-w-[120px]">
+            · {{ application.applicant.name }}
+          </span>
+        </div>
 
-      <p class="text-sm leading-relaxed text-body line-clamp-2 mb-4">
-        {{ application.description || 'Tidak ada keterangan tambahan.' }}
-      </p>
-    </div>
-
-    <div class="flex items-center justify-between border-t border-hairline pt-3 mt-2">
-      <div class="flex items-center gap-2">
-        <Icon icon="mdi:paperclip" class="text-mute text-sm" />
-        <span class="text-xs text-mute">
-          {{ application.documents_count ?? (application.documents?.length || 0) }} Berkas
-        </span>
-        <span v-if="application.applicant?.name" class="text-xs text-mute ml-1">
-          · {{ application.applicant.name }}
-        </span>
+        <Button
+          :label="computedActionLabel"
+          icon="pi pi-arrow-right"
+          iconPos="right"
+          size="small"
+          text
+          class="p-0 text-xs font-bold"
+          @click.stop="$emit('action', application)"
+        />
       </div>
-      <button
-        class="bg-transparent border-none text-primary text-xs font-bold cursor-pointer hover:text-primary-dark transition-colors"
-        @click.stop="$emit('action', application)"
-      >
-        {{ computedActionLabel }} →
-      </button>
-    </div>
-  </div>
+    </template>
+  </Card>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Icon } from '@iconify/vue'
+import Card from 'primevue/card'
+import Tag from 'primevue/tag'
+import Button from 'primevue/button'
 import type { Application } from '@/types'
 import StatusBadge from './StatusBadge.vue'
 import { formatDate, getStatusValue } from '@/utils/formatters'
@@ -74,9 +82,9 @@ const statusVal = computed(() => getStatusValue(props.application.status))
 
 const computedActionLabel = computed(() => {
   if (props.actionLabel) return props.actionLabel
-  if (statusVal.value === 'draft') return 'Lengkapi & Ajukan'
+  if (statusVal.value === 'draft') return 'Lengkapi'
   if (statusVal.value === 'revision_required') return 'Perbaiki'
-  return 'Lihat Detail'
+  return 'Detail'
 })
 
 const formattedDate = computed(() => {

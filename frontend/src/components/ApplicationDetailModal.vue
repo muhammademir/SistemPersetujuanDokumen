@@ -1,189 +1,190 @@
 <template>
-  <Teleport to="body">
-    <transition name="modal">
-      <div v-if="modelValue && application" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 sm:p-6 z-[100] backdrop-blur-xs" @click.self="close">
-        <div class="bg-canvas rounded-sm w-full max-w-[760px] max-h-[92vh] flex flex-col overflow-hidden border border-hairline shadow-2xl animate-fade-in-up">
-          
-          <!-- Header -->
-          <div class="flex items-center justify-between px-6 py-4 border-b border-hairline bg-surface-soft">
-            <div class="flex items-center gap-3">
-              <div class="w-3 h-3 bg-primary"></div>
-              <div>
-                <span class="text-xs font-mono text-mute uppercase tracking-wider">{{ application.code }}</span>
-                <h2 class="text-lg font-bold text-ink leading-tight">{{ application.title }}</h2>
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              <StatusBadge :status="application.status" />
-              <button @click="close" class="w-8 h-8 flex items-center justify-center bg-transparent border border-hairline rounded-sm text-mute cursor-pointer hover:bg-canvas hover:text-ink transition-colors">
-                <Icon icon="mdi:close" class="text-lg" />
-              </button>
-            </div>
+  <Dialog
+    :visible="modelValue"
+    @update:visible="emit('update:modelValue', $event)"
+    modal
+    :header="application ? `${application.code} - ${application.title}` : 'Detail Permohonan'"
+    :style="{ width: '90vw', maxWidth: '780px' }"
+    :breakpoints="{ '960px': '95vw', '640px': '100vw' }"
+  >
+    <template #header v-if="application">
+      <div class="flex items-center justify-between w-full pr-4">
+        <div class="flex items-center gap-3">
+          <div class="w-3 h-3 bg-primary-500 rounded-sm"></div>
+          <div>
+            <span class="text-xs font-mono text-surface-500 uppercase tracking-wider block">
+              {{ application.code }}
+            </span>
+            <h2 class="text-base font-bold text-surface-900 dark:text-surface-0 leading-tight">
+              {{ application.title }}
+            </h2>
           </div>
+        </div>
+        <StatusBadge :status="application.status" />
+      </div>
+    </template>
 
-          <!-- Modal Body Scrollable -->
-          <div class="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
-            
-            <!-- Metadata Grid -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 bg-surface-soft/60 rounded-sm border border-hairline text-xs">
-              <div>
-                <span class="text-mute block font-medium">Tipe Dokumen</span>
-                <span class="font-bold text-ink text-sm">{{ application.document_type }}</span>
-              </div>
-              <div>
-                <span class="text-mute block font-medium">Pemohon</span>
-                <span class="font-bold text-ink text-sm">{{ application.applicant?.name || '-' }}</span>
-              </div>
-              <div>
-                <span class="text-mute block font-medium">Tanggal Diajukan</span>
-                <span class="font-bold text-ink">{{ formatDate(application.submitted_at || application.created_at) }}</span>
-              </div>
-              <div>
-                <span class="text-mute block font-medium">Revisi Ke</span>
-                <span class="font-bold text-ink">{{ application.revision_count }}</span>
-              </div>
-            </div>
-
-            <!-- Description -->
-            <div>
-              <h4 class="text-xs font-bold uppercase tracking-wider text-mute mb-1.5">Deskripsi / Keterangan Permohonan</h4>
-              <p class="text-sm text-body leading-relaxed bg-canvas p-3 border border-hairline rounded-sm whitespace-pre-line">
-                {{ application.description || 'Tidak ada keterangan tambahan.' }}
-              </p>
-            </div>
-
-            <!-- Uploaded Documents -->
-            <div>
-              <div class="flex items-center justify-between mb-2">
-                <h4 class="text-xs font-bold uppercase tracking-wider text-mute">Berkas Lampiran Dokumen</h4>
-                <span class="text-xs text-mute">{{ application.documents?.length || 0 }} Berkas terlampir</span>
-              </div>
-              
-              <div v-if="application.documents && application.documents.length" class="flex flex-col gap-2">
-                <div
-                  v-for="doc in application.documents"
-                  :key="doc.id"
-                  class="flex items-center justify-between p-3 border border-hairline rounded-sm bg-canvas hover:border-primary transition-colors"
-                >
-                  <div class="flex items-center gap-3 min-w-0">
-                    <Icon icon="mdi:file-document-outline" class="text-xl text-primary flex-shrink-0" />
-                    <div class="flex flex-col min-w-0">
-                      <span class="text-xs font-bold text-ink truncate">{{ doc.original_name }}</span>
-                      <span class="text-[11px] text-mute">
-                        {{ formatFileSize(doc.size_bytes) }} · Revisi #{{ doc.revision_number }} · {{ formatDate(doc.uploaded_at) }}
-                      </span>
-                    </div>
-                  </div>
-                  <span class="text-xs font-bold text-primary px-2 py-1 bg-primary/10 rounded">Tersimpan</span>
-                </div>
-              </div>
-              <div v-else class="p-4 border border-dashed border-hairline rounded-sm text-center text-xs text-mute">
-                Belum ada berkas fisik yang diunggah.
-              </div>
-            </div>
-
-            <!-- Reviews / Catatan Keputusan Penilai -->
-            <div v-if="application.reviews && application.reviews.length">
-              <h4 class="text-xs font-bold uppercase tracking-wider text-mute mb-2">Riwayat Catatan Penilai</h4>
-              <div class="flex flex-col gap-2.5">
-                <div
-                  v-for="rev in application.reviews"
-                  :key="rev.id"
-                  class="p-3.5 rounded-sm border"
-                  :class="rev.decision === 'approved' ? 'bg-emerald-500/5 border-emerald-500/30' : rev.decision === 'rejected' ? 'bg-error/5 border-error/30' : 'bg-warning/5 border-warning/30'"
-                >
-                  <div class="flex items-center justify-between gap-2 mb-1.5">
-                    <div class="flex items-center gap-2">
-                      <span
-                        class="text-xs font-bold uppercase px-2 py-0.5 rounded"
-                        :class="rev.decision === 'approved' ? 'bg-emerald-500 text-white' : rev.decision === 'rejected' ? 'bg-error text-white' : 'bg-warning text-white'"
-                      >
-                        {{ formatDecision(rev.decision) }}
-                      </span>
-                      <span class="text-xs font-semibold text-ink">Oleh {{ rev.reviewer || 'Penilai' }}</span>
-                    </div>
-                    <span class="text-[11px] text-mute">{{ formatDate(rev.reviewed_at) }}</span>
-                  </div>
-                  <p class="text-xs text-body leading-relaxed mt-1">
-                    {{ rev.note || 'Tidak ada catatan khusus.' }}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Status Logs Timeline -->
-            <div v-if="application.status_logs && application.status_logs.length">
-              <h4 class="text-xs font-bold uppercase tracking-wider text-mute mb-2">Log Riwayat Perubahan Status</h4>
-              <div class="relative pl-6 flex flex-col gap-3 border-l-2 border-hairline ml-2">
-                <div
-                  v-for="log in application.status_logs"
-                  :key="log.id"
-                  class="relative flex flex-col text-xs"
-                >
-                  <div class="absolute -left-[31px] top-0.5 w-2.5 h-2.5 rounded-full bg-primary ring-4 ring-canvas"></div>
-                  <div class="flex items-center justify-between gap-2">
-                    <span class="font-bold text-ink">
-                      {{ formatStatusName(log.to_status) }}
-                    </span>
-                    <span class="text-[11px] text-mute">{{ formatDate(log.created_at) }}</span>
-                  </div>
-                  <span class="text-mute text-[11px] mt-0.5">
-                    Oleh {{ log.actor || 'Sistem' }}
-                    <span v-if="log.note"> · "{{ log.note }}"</span>
-                  </span>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-          <!-- Modal Footer Actions -->
-          <div class="flex items-center justify-between px-6 py-4 border-t border-hairline bg-surface-soft">
-            <button @click="close" class="px-4 py-2 bg-transparent border border-hairline rounded-sm font-brand text-xs font-bold text-ink hover:bg-canvas transition-colors">
-              Tutup
-            </button>
-
-            <div class="flex items-center gap-2">
-              <!-- Pemohon Actions -->
-              <template v-if="isPemohon">
-                <button
-                  v-if="statusVal === 'draft'"
-                  @click="$emit('submit-app', application)"
-                  class="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-ink font-brand text-xs font-bold rounded-sm hover:bg-primary-dark transition-colors"
-                >
-                  <Icon icon="mdi:send" /> Ajukan Sekarang
-                </button>
-                <button
-                  v-if="statusVal === 'revision_required'"
-                  @click="$emit('edit-app', application)"
-                  class="inline-flex items-center gap-1.5 px-4 py-2 bg-warning text-white font-brand text-xs font-bold rounded-sm hover:brightness-110 transition-all"
-                >
-                  <Icon icon="mdi:pencil" /> Perbaiki Revisi
-                </button>
-              </template>
-
-              <!-- Penilai Actions -->
-              <template v-if="isPenilai">
-                <button
-                  v-if="statusVal === 'submitted' || statusVal === 'under_review'"
-                  @click="$emit('open-review', application)"
-                  class="inline-flex items-center gap-1.5 px-5 py-2 bg-primary text-ink font-brand text-xs font-bold rounded-sm hover:bg-primary-dark transition-colors"
-                >
-                  <Icon icon="mdi:check-decagram-outline" /> Beri Penilaian
-                </button>
-              </template>
-            </div>
-          </div>
-
+    <div v-if="application" class="space-y-6 pt-2">
+      <!-- Metadata Grid -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 bg-surface-50 dark:bg-surface-800/60 rounded-lg border border-surface-200 dark:border-surface-700 text-xs">
+        <div>
+          <span class="text-surface-500 block font-medium">Tipe Dokumen</span>
+          <span class="font-bold text-surface-900 dark:text-surface-0 text-sm">{{ application.document_type }}</span>
+        </div>
+        <div>
+          <span class="text-surface-500 block font-medium">Pemohon</span>
+          <span class="font-bold text-surface-900 dark:text-surface-0 text-sm">{{ application.applicant?.name || '-' }}</span>
+        </div>
+        <div>
+          <span class="text-surface-500 block font-medium">Tanggal Diajukan</span>
+          <span class="font-bold text-surface-900 dark:text-surface-0">{{ formatDate(application.submitted_at || application.created_at) }}</span>
+        </div>
+        <div>
+          <span class="text-surface-500 block font-medium">Revisi Ke</span>
+          <span class="font-bold text-surface-900 dark:text-surface-0">{{ application.revision_count }}</span>
         </div>
       </div>
-    </transition>
-  </Teleport>
+
+      <!-- Description -->
+      <div>
+        <h4 class="text-xs font-bold uppercase tracking-wider text-surface-500 mb-2">Deskripsi / Keterangan Permohonan</h4>
+        <div class="text-sm text-surface-700 dark:text-surface-300 leading-relaxed bg-surface-50 dark:bg-surface-800/40 p-3.5 border border-surface-200 dark:border-surface-700 rounded-lg whitespace-pre-line">
+          {{ application.description || 'Tidak ada keterangan tambahan.' }}
+        </div>
+      </div>
+
+      <!-- Uploaded Documents -->
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-surface-500">Berkas Lampiran Dokumen</h4>
+          <Tag :value="`${application.documents?.length || 0} Berkas`" severity="secondary" rounded />
+        </div>
+
+        <div v-if="application.documents && application.documents.length" class="space-y-2">
+          <div
+            v-for="doc in application.documents"
+            :key="doc.id"
+            class="flex items-center justify-between p-3 border border-surface-200 dark:border-surface-700 rounded-lg bg-surface-0 dark:bg-surface-900 hover:border-primary-500 transition-colors"
+          >
+            <div class="flex items-center gap-3 min-w-0">
+              <i class="pi pi-file-pdf text-2xl text-primary-500 flex-shrink-0"></i>
+              <div class="flex flex-col min-w-0">
+                <span class="text-xs font-bold text-surface-900 dark:text-surface-0 truncate">{{ doc.original_name }}</span>
+                <span class="text-[11px] text-surface-500">
+                  {{ formatFileSize(doc.size_bytes) }} · Revisi #{{ doc.revision_number }} · {{ formatDate(doc.uploaded_at) }}
+                </span>
+              </div>
+            </div>
+            <Tag value="Tersimpan" severity="success" class="text-xs font-bold" />
+          </div>
+        </div>
+        <div v-else class="p-4 border border-dashed border-surface-300 dark:border-surface-700 rounded-lg text-center text-xs text-surface-500">
+          Belum ada berkas fisik yang diunggah.
+        </div>
+      </div>
+
+      <!-- Reviews / Decision History -->
+      <div v-if="application.reviews && application.reviews.length">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-surface-500 mb-2">Riwayat Catatan Penilai</h4>
+        <div class="space-y-3">
+          <div
+            v-for="rev in application.reviews"
+            :key="rev.id"
+            class="p-4 rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800/40"
+          >
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <div class="flex items-center gap-2">
+                <Tag
+                  :value="formatDecision(rev.decision)"
+                  :severity="rev.decision === 'approved' ? 'success' : rev.decision === 'rejected' ? 'danger' : 'warn'"
+                  class="text-xs font-bold uppercase"
+                />
+                <span class="text-xs font-semibold text-surface-800 dark:text-surface-200">
+                  Oleh {{ rev.reviewer || 'Penilai' }}
+                </span>
+              </div>
+              <span class="text-[11px] text-surface-500">{{ formatDate(rev.reviewed_at) }}</span>
+            </div>
+            <p class="text-xs text-surface-700 dark:text-surface-300 leading-relaxed mt-1">
+              {{ rev.note || 'Tidak ada catatan khusus.' }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status Timeline with PrimeVue Timeline -->
+      <div v-if="timelineEvents.length">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-surface-500 mb-2">Timeline Riwayat Status</h4>
+        <Timeline :value="timelineEvents">
+          <template #marker="slotProps">
+            <span
+              class="flex items-center justify-center w-6 h-6 rounded-full text-white text-[10px]"
+              :class="slotProps.item.color"
+            >
+              <i :class="slotProps.item.icon"></i>
+            </span>
+          </template>
+          <template #content="slotProps">
+            <div class="pb-3 text-xs">
+              <div class="flex items-center justify-between gap-2">
+                <span class="font-bold text-surface-900 dark:text-surface-0">{{ slotProps.item.status }}</span>
+                <span class="text-[11px] text-surface-500">{{ slotProps.item.date }}</span>
+              </div>
+              <span class="text-[11px] text-surface-500 block mt-0.5">
+                Oleh {{ slotProps.item.actor }}
+                <span v-if="slotProps.item.note"> · "{{ slotProps.item.note }}"</span>
+              </span>
+            </div>
+          </template>
+        </Timeline>
+      </div>
+    </div>
+
+    <template #footer>
+      <div class="flex items-center justify-between w-full pt-2">
+        <Button label="Tutup" severity="secondary" text @click="close" />
+
+        <div class="flex items-center gap-2">
+          <!-- Pemohon Actions -->
+          <template v-if="isPemohon && application">
+            <Button
+              v-if="statusVal === 'draft'"
+              label="Ajukan Sekarang"
+              icon="pi pi-send"
+              severity="primary"
+              @click="$emit('submit-app', application)"
+            />
+            <Button
+              v-if="statusVal === 'revision_required'"
+              label="Perbaiki Revisi"
+              icon="pi pi-pencil"
+              severity="warn"
+              @click="$emit('edit-app', application)"
+            />
+          </template>
+
+          <!-- Penilai Actions -->
+          <template v-if="isPenilai && application">
+            <Button
+              v-if="statusVal === 'submitted' || statusVal === 'under_review'"
+              label="Beri Penilaian"
+              icon="pi pi-check-square"
+              severity="primary"
+              @click="$emit('open-review', application)"
+            />
+          </template>
+        </div>
+      </div>
+    </template>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Icon } from '@iconify/vue'
+import Dialog from 'primevue/dialog'
+import Button from 'primevue/button'
+import Tag from 'primevue/tag'
+import Timeline from 'primevue/timeline'
 import type { Application } from '@/types'
 import StatusBadge from './StatusBadge.vue'
 import { useAuthStore } from '@/stores/auth'
@@ -214,6 +215,41 @@ const isPenilai = computed(() => authStore.isPenilai)
 const statusVal = computed(() => {
   if (!props.application) return ''
   return getStatusValue(props.application.status)
+})
+
+const timelineEvents = computed(() => {
+  if (!props.application?.status_logs) return []
+  return props.application.status_logs.map(log => {
+    let icon = 'pi pi-info-circle'
+    let color = 'bg-surface-500'
+    const st = log.to_status
+
+    if (st === 'approved') {
+      icon = 'pi pi-check'
+      color = 'bg-emerald-600'
+    } else if (st === 'rejected') {
+      icon = 'pi pi-times'
+      color = 'bg-red-600'
+    } else if (st === 'revision_required') {
+      icon = 'pi pi-pencil'
+      color = 'bg-amber-600'
+    } else if (st === 'submitted') {
+      icon = 'pi pi-send'
+      color = 'bg-blue-600'
+    } else if (st === 'under_review') {
+      icon = 'pi pi-search'
+      color = 'bg-indigo-600'
+    }
+
+    return {
+      status: formatStatusName(st),
+      date: formatDate(log.created_at),
+      actor: log.actor || 'Sistem',
+      note: log.note,
+      icon,
+      color,
+    }
+  })
 })
 
 function close() {

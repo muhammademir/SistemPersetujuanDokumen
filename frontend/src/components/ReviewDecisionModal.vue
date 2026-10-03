@@ -1,108 +1,83 @@
 <template>
-  <Teleport to="body">
-    <transition name="modal">
-      <div
-        v-if="modelValue && application"
-        class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 sm:p-6 z-[100] backdrop-blur-xs"
-        @click.self="handleClose"
-      >
-        <div class="bg-canvas rounded-sm w-full max-w-[580px] max-h-[92vh] overflow-y-auto border border-hairline shadow-2xl animate-fade-in-up">
-          <!-- Header -->
-          <div class="flex items-center justify-between px-6 py-4 border-b border-hairline bg-surface-soft">
-            <div class="flex items-center gap-2.5">
-              <div class="w-3 h-3 bg-primary"></div>
-              <h2 class="text-base font-bold text-ink">Verifikasi & Keputusan Permohonan</h2>
-            </div>
-            <button
-              @click="handleClose"
-              class="w-8 h-8 flex items-center justify-center bg-transparent border border-hairline rounded-sm text-mute cursor-pointer hover:bg-canvas transition-colors"
-            >
-              <Icon icon="mdi:close" />
-            </button>
-          </div>
+  <Dialog
+    :visible="modelValue"
+    @update:visible="emit('update:modelValue', $event)"
+    modal
+    header="Verifikasi & Keputusan Permohonan"
+    :style="{ width: '90vw', maxWidth: '600px' }"
+  >
+    <div v-if="application" class="space-y-5 pt-2">
+      <!-- Target Summary Box -->
+      <div class="p-4 bg-surface-50 dark:bg-surface-800/60 rounded-lg border border-surface-200 dark:border-surface-700 flex flex-col gap-2 text-xs">
+        <div class="flex items-center justify-between gap-2">
+          <span class="font-mono text-surface-500 font-bold">{{ application.code }}</span>
+          <Tag :value="application.document_type" severity="info" class="text-xs uppercase font-bold" />
+        </div>
+        <h3 class="text-sm font-bold text-surface-900 dark:text-surface-0">{{ application.title }}</h3>
+        <p class="text-surface-600 dark:text-surface-400 text-xs line-clamp-2">
+          {{ application.description || 'Tidak ada catatan tambahan.' }}
+        </p>
+        <div v-if="application.applicant" class="text-[11px] text-surface-500 mt-1">
+          Pemohon: <span class="font-semibold text-surface-800 dark:text-surface-200">{{ application.applicant.name }}</span> ({{ application.applicant.email }})
+        </div>
+      </div>
 
-          <!-- Content Body -->
-          <div class="p-6 flex flex-col gap-5">
-            <!-- Target Summary -->
-            <div class="p-4 bg-surface-soft/60 rounded-sm border border-hairline flex flex-col gap-1.5 text-xs">
-              <div class="flex items-center justify-between gap-2">
-                <span class="font-mono text-mute font-bold">{{ application.code }}</span>
-                <span class="px-2 py-0.5 bg-primary/10 text-primary rounded font-bold uppercase">
-                  {{ application.document_type }}
-                </span>
-              </div>
-              <h3 class="text-sm font-bold text-ink">{{ application.title }}</h3>
-              <p class="text-body text-xs line-clamp-2">
-                {{ application.description || 'Tidak ada catatan tambahan.' }}
-              </p>
-              <div v-if="application.applicant" class="text-[11px] text-mute mt-1">
-                Pemohon: <span class="font-semibold text-ink">{{ application.applicant.name }}</span> ({{ application.applicant.email }})
-              </div>
-            </div>
-
-            <!-- Decision Options -->
-            <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold uppercase tracking-wider text-ink">
-                Pilih Keputusan Penilaian *
-              </label>
-              <div class="grid grid-cols-3 gap-2.5">
-                <button
-                  v-for="opt in decisionOptions"
-                  :key="opt.value"
-                  type="button"
-                  @click="decision = opt.value"
-                  class="p-3 flex flex-col items-center gap-1.5 rounded-sm border cursor-pointer font-brand text-xs font-bold transition-all"
-                  :class="decision === opt.value ? opt.activeClass : 'border-hairline hover:border-primary'"
-                >
-                  <Icon :icon="opt.icon" class="text-xl" :class="opt.iconClass" />
-                  <span>{{ opt.label }}</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Review Notes Input -->
-            <div class="flex flex-col gap-1.5">
-              <label class="text-xs font-bold uppercase tracking-wider text-ink">
-                Catatan Penilaian {{ isRevisionRequired ? '(Wajib Diisi)' : '(Opsional)' }}
-              </label>
-              <textarea
-                v-model="note"
-                rows="4"
-                :required="isRevisionRequired"
-                placeholder="Berikan alasan atau instruksi revisi yang jelas untuk pemohon..."
-                class="w-full px-4 py-3 bg-canvas border border-hairline rounded-sm font-brand text-xs text-ink outline-none resize-y min-h-[90px] transition-colors focus:border-primary focus:border-2 focus:px-[15px] placeholder:text-ash"
-              ></textarea>
-            </div>
-          </div>
-
-          <!-- Footer Actions -->
-          <div class="flex items-center justify-end gap-2 px-6 py-4 border-t border-hairline bg-surface-soft">
-            <button
-              @click="handleClose"
-              type="button"
-              class="px-4 py-2 bg-transparent border border-hairline rounded-sm font-brand text-xs font-bold text-ink hover:bg-canvas cursor-pointer transition-colors"
-            >
-              Batal
-            </button>
-            <button
-              @click="handleSubmit"
-              type="button"
-              :disabled="!isValid || loading"
-              class="inline-flex items-center gap-2 px-5 py-2 border-none rounded-sm font-brand text-xs font-bold cursor-pointer transition-all disabled:bg-surface-soft disabled:text-ash disabled:cursor-not-allowed text-ink bg-primary hover:bg-primary-dark shadow-xs"
-            >
-              <span v-if="loading" class="w-3.5 h-3.5 border-2 border-transparent border-t-current rounded-full animate-spin"></span>
-              <span>Kirim Keputusan</span>
-            </button>
+      <!-- Decision Options -->
+      <div class="space-y-2">
+        <label class="block text-xs font-bold uppercase tracking-wider text-surface-700 dark:text-surface-300">
+          Pilih Keputusan Penilaian *
+        </label>
+        <div class="grid grid-cols-3 gap-3">
+          <div
+            v-for="opt in decisionOptions"
+            :key="opt.value"
+            @click="decision = opt.value"
+            class="p-3.5 flex flex-col items-center gap-2 rounded-lg border-2 cursor-pointer transition-all text-center"
+            :class="decision === opt.value ? opt.activeClass : 'border-surface-200 dark:border-surface-700 hover:border-surface-400'"
+          >
+            <i :class="opt.icon" class="text-2xl" :style="{ color: opt.iconColor }"></i>
+            <span class="text-xs font-bold">{{ opt.label }}</span>
           </div>
         </div>
       </div>
-    </transition>
-  </Teleport>
+
+      <!-- Review Notes Input -->
+      <div class="space-y-1.5">
+        <label class="block text-xs font-bold uppercase tracking-wider text-surface-700 dark:text-surface-300">
+          Catatan Penilaian {{ isRevisionRequired ? '(Wajib Diisi)' : '(Opsional)' }}
+        </label>
+        <Textarea
+          v-model="note"
+          rows="4"
+          class="w-full text-xs"
+          placeholder="Berikan alasan atau instruksi revisi yang jelas untuk pemohon..."
+          autoResize
+        />
+      </div>
+    </div>
+
+    <template #footer>
+      <div class="flex items-center justify-end gap-2 pt-2">
+        <Button label="Batal" severity="secondary" text @click="handleClose" />
+        <Button
+          label="Kirim Keputusan"
+          icon="pi pi-check"
+          severity="primary"
+          :loading="loading"
+          :disabled="!isValid || loading"
+          @click="handleSubmit"
+        />
+      </div>
+    </template>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { Icon } from '@iconify/vue'
+import Dialog from 'primevue/dialog'
+import Button from 'primevue/button'
+import Tag from 'primevue/tag'
+import Textarea from 'primevue/textarea'
 import type { Application } from '@/types'
 
 const props = withDefaults(
@@ -135,23 +110,23 @@ const decisionOptions = [
   {
     value: 'approved',
     label: 'Disetujui',
-    icon: 'mdi:check-circle',
-    iconClass: 'text-emerald-600',
-    activeClass: 'bg-emerald-500/10 border-emerald-500 border-2 text-emerald-700',
+    icon: 'pi pi-check-circle',
+    iconColor: '#10b981',
+    activeClass: 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300',
   },
   {
     value: 'revision_required',
     label: 'Perlu Revisi',
-    icon: 'mdi:pencil-outline',
-    iconClass: 'text-orange-500',
-    activeClass: 'bg-orange-500/10 border-orange-500 border-2 text-orange-600',
+    icon: 'pi pi-pencil',
+    iconColor: '#f59e0b',
+    activeClass: 'border-amber-500 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300',
   },
   {
     value: 'rejected',
     label: 'Ditolak',
-    icon: 'mdi:close-circle',
-    iconClass: 'text-error',
-    activeClass: 'bg-error/10 border-error border-2 text-error',
+    icon: 'pi pi-times-circle',
+    iconColor: '#ef4444',
+    activeClass: 'border-red-500 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300',
   },
 ]
 

@@ -1,109 +1,168 @@
 <template>
-  <div class="animate-fade-in-up">
-    <div class="mb-7">
-      <h1 class="font-brand text-3xl font-bold text-ink mb-2">Daftar Akun</h1>
-      <p class="text-sm text-mute">Buat akun baru untuk menggunakan sistem</p>
-    </div>
-
-    <!-- Error alert -->
-    <div v-if="authStore.error" class="flex items-center gap-2.5 px-4 py-3 bg-error/10 border border-error/20 rounded-sm mb-6 text-sm text-error animate-fade-in">
-      <Icon icon="mdi:alert-circle-outline" class="text-base flex-shrink-0" />
-      <span class="flex-1">{{ authStore.error }}</span>
-      <button class="bg-transparent border-none text-error cursor-pointer text-sm p-1 flex-shrink-0" @click="authStore.clearError">
-        <Icon icon="mdi:close" />
-      </button>
-    </div>
-
-    <form @submit.prevent="handleRegister" class="flex flex-col gap-4">
-      <div class="flex flex-col gap-1.5">
-        <label class="text-sm font-bold text-ink" for="reg-name">Nama Lengkap</label>
-        <input id="reg-name" v-model="form.name" type="text"
-          class="w-full h-11 px-4 bg-canvas border border-hairline rounded-sm font-brand text-base text-ink outline-none transition-colors focus:border-primary focus:border-2 focus:px-[15px] placeholder:text-ash"
-          placeholder="Masukkan nama lengkap" required autocomplete="name" />
+  <Card class="shadow-xl border border-surface-200 dark:border-surface-700">
+    <template #title>
+      <div class="mb-1">
+        <h1 class="text-2xl font-bold font-brand text-surface-900 dark:text-surface-0">Daftar Akun Baru</h1>
+        <p class="text-xs text-surface-500 font-normal">Buat akun untuk mengajukan atau menilai dokumen kelayakan</p>
       </div>
+    </template>
 
-      <div class="flex flex-col gap-1.5">
-        <label class="text-sm font-bold text-ink" for="reg-email">Email</label>
-        <input id="reg-email" v-model="form.email" type="email"
-          class="w-full h-11 px-4 bg-canvas border border-hairline rounded-sm font-brand text-base text-ink outline-none transition-colors focus:border-primary focus:border-2 focus:px-[15px] placeholder:text-ash"
-          placeholder="nama@email.com" required autocomplete="email" />
-      </div>
+    <template #content>
+      <!-- Error Message -->
+      <Message v-if="authStore.error" severity="error" :closable="true" @close="authStore.clearError" class="mb-4 text-xs">
+        {{ authStore.error }}
+      </Message>
 
-      <div class="flex flex-col gap-1.5">
-        <label class="text-sm font-bold text-ink">Peran</label>
-        <div class="grid grid-cols-2 gap-3">
-          <button type="button" @click="form.role = 'pemohon'"
-            class="flex flex-col items-center gap-1 px-3 py-4 bg-transparent border rounded-sm cursor-pointer transition-all"
-            :class="form.role === 'pemohon' ? 'border-primary border-2 bg-primary/5 px-[11px] py-[15px]' : 'border-hairline hover:border-primary'">
-            <Icon icon="mdi:file-document-edit-outline" class="text-2xl" />
-            <span class="text-sm font-bold text-ink">Pemohon</span>
-            <span class="text-[11px] text-mute">Ajukan dokumen</span>
-          </button>
-          <button type="button" @click="form.role = 'penilai'"
-            class="flex flex-col items-center gap-1 px-3 py-4 bg-transparent border rounded-sm cursor-pointer transition-all"
-            :class="form.role === 'penilai' ? 'border-primary border-2 bg-primary/5 px-[11px] py-[15px]' : 'border-hairline hover:border-primary'">
-            <Icon icon="mdi:check-decagram" class="text-2xl" />
-            <span class="text-sm font-bold text-ink">Penilai</span>
-            <span class="text-[11px] text-mute">Review dokumen</span>
-          </button>
+      <form @submit.prevent="handleRegister" class="space-y-4">
+        <!-- Full Name -->
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-semibold text-surface-700 dark:text-surface-300" for="reg-name">Nama Lengkap</label>
+          <IconField>
+            <InputIcon class="pi pi-user" />
+            <InputText
+              id="reg-name"
+              v-model="form.name"
+              placeholder="Masukkan nama lengkap"
+              class="w-full text-sm"
+              required
+              autocomplete="name"
+            />
+          </IconField>
         </div>
-      </div>
 
-      <div class="flex flex-col gap-1.5">
-        <label class="text-sm font-bold text-ink" for="reg-password">Password</label>
-        <div class="relative">
-          <input id="reg-password" v-model="form.password" :type="showPassword ? 'text' : 'password'"
-            class="w-full h-11 px-4 pr-11 bg-canvas border border-hairline rounded-sm font-brand text-base text-ink outline-none transition-colors focus:border-primary focus:border-2 focus:px-[15px] focus:pr-[43px] placeholder:text-ash"
-            placeholder="Minimal 8 karakter" required minlength="8" autocomplete="new-password" />
-          <button type="button" tabindex="-1" @click="showPassword = !showPassword"
-            class="absolute right-2 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer p-1.5 text-mute hover:text-ink transition-colors">
-            <Icon :icon="showPassword ? 'mdi:eye-off-outline' : 'mdi:eye-outline'" class="text-lg" />
-          </button>
+        <!-- Email -->
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-semibold text-surface-700 dark:text-surface-300" for="reg-email">Email</label>
+          <IconField>
+            <InputIcon class="pi pi-envelope" />
+            <InputText
+              id="reg-email"
+              v-model="form.email"
+              type="email"
+              placeholder="nama@email.com"
+              class="w-full text-sm"
+              required
+              autocomplete="email"
+            />
+          </IconField>
         </div>
+
+        <!-- Role Selection -->
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-semibold text-surface-700 dark:text-surface-300">Pilih Peran Akun *</label>
+          <div class="grid grid-cols-2 gap-3">
+            <div
+              @click="form.role = 'pemohon'"
+              class="p-3.5 rounded-lg border-2 cursor-pointer transition-all flex flex-col items-center gap-1.5 text-center"
+              :class="form.role === 'pemohon' ? 'border-primary-500 bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300' : 'border-surface-200 dark:border-surface-700 hover:border-surface-400'"
+            >
+              <i class="pi pi-file-edit text-2xl"></i>
+              <span class="text-xs font-bold">Pemohon</span>
+              <span class="text-[10px] text-surface-500">Ajukan dokumen</span>
+            </div>
+
+            <div
+              @click="form.role = 'penilai'"
+              class="p-3.5 rounded-lg border-2 cursor-pointer transition-all flex flex-col items-center gap-1.5 text-center"
+              :class="form.role === 'penilai' ? 'border-primary-500 bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300' : 'border-surface-200 dark:border-surface-700 hover:border-surface-400'"
+            >
+              <i class="pi pi-shield text-2xl"></i>
+              <span class="text-xs font-bold">Penilai</span>
+              <span class="text-[10px] text-surface-500">Review dokumen</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-semibold text-surface-700 dark:text-surface-300" for="reg-password">Kata Sandi</label>
+          <Password
+            id="reg-password"
+            v-model="form.password"
+            placeholder="Minimal 8 karakter"
+            toggleMask
+            class="w-full"
+            inputClass="w-full text-sm"
+            required
+            autocomplete="new-password"
+          />
+        </div>
+
+        <!-- Password Confirmation -->
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-semibold text-surface-700 dark:text-surface-300" for="reg-confirm">Konfirmasi Kata Sandi</label>
+          <Password
+            id="reg-confirm"
+            v-model="form.password_confirmation"
+            placeholder="Ulangi kata sandi"
+            :feedback="false"
+            toggleMask
+            class="w-full"
+            inputClass="w-full text-sm"
+            required
+            autocomplete="new-password"
+          />
+          <span v-if="passwordMismatch" class="text-xs text-red-500 mt-0.5">
+            Konfirmasi kata sandi tidak cocok
+          </span>
+        </div>
+
+        <Button
+          type="submit"
+          label="Daftar Sekarang"
+          icon="pi pi-user-plus"
+          class="w-full font-bold mt-2"
+          :loading="authStore.loading"
+          :disabled="passwordMismatch || authStore.loading"
+        />
+      </form>
+    </template>
+
+    <template #footer>
+      <div class="flex items-center justify-center gap-1.5 pt-3 border-t border-surface-200 dark:border-surface-700 text-xs text-surface-500">
+        <span>Sudah memiliki akun?</span>
+        <router-link to="/login" class="font-bold text-primary-600 hover:text-primary-700">
+          Masuk ke sistem →
+        </router-link>
       </div>
-
-      <div class="flex flex-col gap-1.5">
-        <label class="text-sm font-bold text-ink" for="reg-confirm">Konfirmasi Password</label>
-        <input id="reg-confirm" v-model="form.password_confirmation" :type="showPassword ? 'text' : 'password'"
-          class="w-full h-11 px-4 bg-canvas border border-hairline rounded-sm font-brand text-base text-ink outline-none transition-colors focus:border-primary focus:border-2 focus:px-[15px] placeholder:text-ash"
-          placeholder="Ulangi password" required autocomplete="new-password" />
-        <span v-if="passwordMismatch" class="text-xs text-error">Password tidak cocok</span>
-      </div>
-
-      <button type="submit"
-        class="flex items-center justify-center gap-2 w-full h-11 mt-1 bg-primary text-ink border-none rounded-sm font-brand text-base font-bold cursor-pointer transition-colors hover:bg-primary-dark disabled:bg-surface-soft disabled:text-ash disabled:cursor-not-allowed"
-        :disabled="authStore.loading || passwordMismatch">
-        <span v-if="authStore.loading" class="w-4 h-4 border-2 border-transparent border-t-current rounded-full animate-spin"></span>
-        <span>{{ authStore.loading ? 'Memproses...' : 'Daftar' }}</span>
-      </button>
-    </form>
-
-    <div class="flex items-center justify-center gap-1.5 mt-7 pt-5 border-t border-hairline">
-      <span class="text-sm text-mute">Sudah punya akun?</span>
-      <router-link to="/login" class="text-sm font-bold text-primary no-underline hover:text-primary-dark transition-colors">Masuk →</router-link>
-    </div>
-  </div>
+    </template>
+  </Card>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, computed } from 'vue'
-import { Icon } from '@iconify/vue'
+import { reactive, computed } from 'vue'
+import Card from 'primevue/card'
+import InputText from 'primevue/inputtext'
+import Password from 'primevue/password'
+import Button from 'primevue/button'
+import Message from 'primevue/message'
+import IconField from 'primevue/iconfield'
+import InputIcon from 'primevue/inputicon'
 import { useAuthStore } from '@/stores/auth'
 import type { RegisterData } from '@/types'
 
 const authStore = useAuthStore()
-const showPassword = ref(false)
 
 const form = reactive<RegisterData>({
-  name: '', email: '', password: '', password_confirmation: '', role: 'pemohon',
+  name: '',
+  email: '',
+  password: '',
+  password_confirmation: '',
+  role: 'pemohon',
 })
 
 const passwordMismatch = computed(() =>
-  form.password.length > 0 && form.password_confirmation.length > 0 && form.password !== form.password_confirmation
+  form.password.length > 0 &&
+  form.password_confirmation.length > 0 &&
+  form.password !== form.password_confirmation
 )
 
 async function handleRegister() {
   if (passwordMismatch.value) return
-  try { await authStore.register(form) } catch { /* handled */ }
+  try {
+    await authStore.register(form)
+  } catch {
+    // Handled in store
+  }
 }
 </script>
