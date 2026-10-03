@@ -3,82 +3,104 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
-        <h1 class="font-brand text-2xl font-bold text-ink mb-1">Riwayat Hasil Penilaian</h1>
-        <p class="text-xs text-mute">Daftar seluruh keputusan verifikasi dan review yang telah Anda berikan</p>
+        <h1 class="font-brand text-2xl font-bold text-surface-900 dark:text-surface-0 mb-1">
+          Riwayat Hasil Penilaian
+        </h1>
+        <p class="text-xs text-surface-500">
+          Daftar seluruh keputusan verifikasi dan review yang telah Anda berikan
+        </p>
       </div>
-      <div class="flex items-center gap-2">
-        <span class="text-xs text-mute">Total Riwayat: <strong class="text-ink">{{ historyReviews.length }}</strong></span>
-      </div>
+      <Tag
+        :value="`Total Riwayat: ${historyReviews.length}`"
+        severity="secondary"
+        class="text-xs font-bold px-3 py-1.5"
+      />
     </div>
 
-    <!-- Table of Reviews -->
-    <div class="bg-canvas border border-hairline rounded-sm p-6 overflow-hidden flex flex-col gap-4">
-      <div class="overflow-x-auto">
-        <table class="w-full border-collapse text-left text-xs">
-          <thead>
-            <tr class="bg-surface-soft/60 border-b border-hairline">
-              <th class="py-3 px-3 font-bold uppercase tracking-wider text-mute">Waktu Penilaian</th>
-              <th class="py-3 px-3 font-bold uppercase tracking-wider text-mute">Permohonan Dokumen</th>
-              <th class="py-3 px-3 font-bold uppercase tracking-wider text-mute">Keputusan</th>
-              <th class="py-3 px-3 font-bold uppercase tracking-wider text-mute">Catatan Reviewer</th>
-              <th class="py-3 px-3 font-bold uppercase tracking-wider text-mute text-right">Aksi</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-hairline">
-            <tr
-              v-for="rev in historyReviews"
-              :key="rev.id"
-              class="hover:bg-surface-soft/40 transition-colors"
-            >
-              <td class="py-3 px-3 whitespace-nowrap text-mute font-medium">
-                {{ formatDateTime(rev.reviewed_at || rev.created_at) }}
-              </td>
-              <td class="py-3 px-3">
-                <div class="flex flex-col">
-                  <div class="flex items-center gap-1.5">
-                    <span class="font-mono text-mute text-[10px]">{{ rev.application?.code || '-' }}</span>
-                    <span v-if="rev.application?.document_type" class="px-1 py-0.2 bg-primary/10 text-primary rounded text-[9px] font-bold">
-                      {{ rev.application.document_type }}
-                    </span>
-                  </div>
-                  <span class="font-bold text-ink text-xs mt-0.5 max-w-[280px] truncate">
-                    {{ rev.application?.title || 'Permohonan' }}
-                  </span>
+    <!-- Table of Reviews using PrimeVue DataTable -->
+    <Card class="border border-surface-200 dark:border-surface-700 shadow-sm overflow-hidden">
+      <template #content>
+        <DataTable
+          :value="historyReviews"
+          paginator
+          :rows="10"
+          :rowsPerPageOptions="[5, 10, 20, 50]"
+          responsiveLayout="scroll"
+          class="text-xs"
+          stripedRows
+          :loading="loading"
+        >
+          <template #empty>
+            <div class="flex flex-col items-center justify-center py-16 text-surface-400 text-xs gap-2">
+              <i class="pi pi-history text-4xl mb-1"></i>
+              <h3 class="text-sm font-bold text-surface-900 dark:text-surface-0">Belum Ada Riwayat Penilaian</h3>
+              <p class="text-xs text-surface-500 max-w-[320px] text-center">
+                Setiap permohonan yang Anda setujui, tolak, atau minta revisi akan tercatat di halaman ini.
+              </p>
+            </div>
+          </template>
+
+          <Column header="Waktu Penilaian" style="min-width: 150px">
+            <template #body="{ data }">
+              <span class="text-surface-500 font-medium">
+                {{ formatDateTime(data.reviewed_at || data.created_at) }}
+              </span>
+            </template>
+          </Column>
+
+          <Column header="Permohonan Dokumen" style="min-width: 260px">
+            <template #body="{ data }">
+              <div class="flex flex-col">
+                <div class="flex items-center gap-1.5 mb-1">
+                  <span class="font-mono text-surface-500 text-[10px]">{{ data.application?.code || '-' }}</span>
+                  <Tag
+                    v-if="data.application?.document_type"
+                    :value="data.application.document_type"
+                    severity="info"
+                    class="text-[9px] font-bold"
+                  />
                 </div>
-              </td>
-              <td class="py-3 px-3 whitespace-nowrap">
-                <span
-                  class="px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wide border"
-                  :class="getDecisionBadgeClass(rev.decision)"
-                >
-                  {{ formatDecision(rev.decision) }}
+                <span class="font-bold text-surface-900 dark:text-surface-0 text-xs truncate max-w-[280px]">
+                  {{ data.application?.title || 'Permohonan' }}
                 </span>
-              </td>
-              <td class="py-3 px-3">
-                <p class="text-xs text-body line-clamp-2 max-w-[320px]">
-                  {{ rev.note || '-' }}
-                </p>
-              </td>
-              <td class="py-3 px-3 text-right whitespace-nowrap">
-                <button
-                  v-if="rev.application_id"
-                  @click="viewAppDetail(rev.application_id)"
-                  class="px-3 py-1.5 bg-surface-soft border border-hairline rounded-sm text-ink font-bold hover:bg-hairline cursor-pointer transition-colors"
-                >
-                  Detail
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+              </div>
+            </template>
+          </Column>
 
-      <div v-if="!historyReviews.length && !loading" class="flex flex-col items-center justify-center py-16 text-mute text-xs gap-2">
-        <Icon icon="mdi:history" class="text-4xl text-mute" />
-        <h3 class="text-sm font-bold text-ink">Belum Ada Riwayat Penilaian</h3>
-        <p class="text-xs text-mute max-w-[320px] text-center">Setiap permohonan yang Anda setujui, tolak, atau minta revisi akan tercatat di halaman ini.</p>
-      </div>
-    </div>
+          <Column header="Keputusan" style="min-width: 140px">
+            <template #body="{ data }">
+              <Tag
+                :value="formatDecision(data.decision)"
+                :severity="getDecisionSeverity(data.decision)"
+                class="text-[10px] font-bold uppercase"
+              />
+            </template>
+          </Column>
+
+          <Column header="Catatan Reviewer" style="min-width: 280px">
+            <template #body="{ data }">
+              <p class="text-xs text-surface-700 dark:text-surface-300 line-clamp-2 max-w-[320px]">
+                {{ data.note || '-' }}
+              </p>
+            </template>
+          </Column>
+
+          <Column header="Aksi" style="min-width: 100px; text-align: right">
+            <template #body="{ data }">
+              <Button
+                v-if="data.application_id"
+                label="Detail"
+                icon="pi pi-eye"
+                size="small"
+                severity="secondary"
+                text
+                @click="viewAppDetail(data.application_id)"
+              />
+            </template>
+          </Column>
+        </DataTable>
+      </template>
+    </Card>
 
     <!-- Detail Modal -->
     <ApplicationDetailModal
@@ -90,10 +112,15 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { Icon } from '@iconify/vue'
+import Card from 'primevue/card'
+import Button from 'primevue/button'
+import Tag from 'primevue/tag'
+import DataTable from 'primevue/datatable'
+import Column from 'primevue/column'
 import api from '@/plugins/axios'
 import { useDocumentStore } from '@/stores/document'
 import ApplicationDetailModal from '@/components/ApplicationDetailModal.vue'
+import { formatDateTime, formatDecision } from '@/utils/formatters'
 import type { Application } from '@/types'
 
 const docStore = useDocumentStore()
@@ -121,18 +148,16 @@ async function viewAppDetail(appId: number) {
   showDetailModal.value = true
 }
 
-import { formatDateTime, formatDecision } from '@/utils/formatters'
-
-function getDecisionBadgeClass(dec: string) {
+function getDecisionSeverity(dec: string): 'success' | 'warn' | 'danger' | 'secondary' {
   switch (dec) {
     case 'approved':
-      return 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700'
+      return 'success'
     case 'revision_required':
-      return 'bg-orange-500/10 border-orange-500/30 text-orange-600'
+      return 'warn'
     case 'rejected':
-      return 'bg-error/10 border-error/30 text-error'
+      return 'danger'
     default:
-      return 'bg-surface-soft border-hairline text-mute'
+      return 'secondary'
   }
 }
 

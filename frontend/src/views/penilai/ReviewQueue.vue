@@ -3,88 +3,101 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
-        <h1 class="font-brand text-2xl font-bold text-ink mb-1">Antrean Penilaian Dokumen</h1>
-        <p class="text-xs text-mute">Daftar permohonan yang berstatus Menunggu Verifikasi atau Sedang Ditinjau</p>
+        <h1 class="font-brand text-2xl font-bold text-surface-900 dark:text-surface-0 mb-1">
+          Antrean Penilaian Dokumen
+        </h1>
+        <p class="text-xs text-surface-500">
+          Daftar permohonan yang berstatus Menunggu Verifikasi atau Sedang Ditinjau
+        </p>
       </div>
-      <span class="text-xs font-bold text-warning bg-warning/10 border border-warning/30 px-3 py-1.5 rounded-sm">
-        {{ pendingList.length }} Dokumen Menunggu Tindakan
-      </span>
+      <Tag
+        :value="`${pendingList.length} Dokumen Menunggu Tindakan`"
+        severity="warn"
+        class="text-xs font-bold px-3 py-1.5"
+      />
     </div>
 
     <!-- Feedback Notification -->
-    <div
-      v-if="alertMessage"
-      class="flex items-center justify-between gap-3 p-4 bg-primary/10 border border-primary/30 rounded-sm text-sm text-success-deep animate-fade-in"
-    >
-      <div class="flex items-center gap-2">
-        <Icon icon="mdi:check-circle" class="text-lg text-primary flex-shrink-0" />
-        <span>{{ alertMessage }}</span>
-      </div>
-      <button @click="alertMessage = ''" class="bg-transparent border-none text-ink cursor-pointer hover:opacity-70">
-        <Icon icon="mdi:close" />
-      </button>
-    </div>
+    <Message v-if="alertMessage" severity="success" :closable="true" @close="alertMessage = ''" class="text-xs">
+      {{ alertMessage }}
+    </Message>
 
     <!-- Priority Review Cards -->
     <div v-if="pendingList.length" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      <div
+      <Card
         v-for="app in pendingList"
         :key="app.id"
-        class="bg-canvas border border-hairline rounded-sm p-5 flex flex-col justify-between hover:border-primary transition-all relative overflow-hidden group shadow-xs"
+        class="border border-surface-200 dark:border-surface-700 hover:shadow-md hover:border-primary-400 transition-all flex flex-col justify-between"
       >
-        <div class="absolute top-0 left-0 w-3 h-3 bg-primary"></div>
-
-        <div>
-          <div class="flex items-center justify-between gap-2 mb-2">
+        <template #header>
+          <div class="p-4 pb-0 flex items-center justify-between gap-2">
             <StatusBadge :status="app.status" />
-            <span class="font-mono text-mute text-xs">{{ app.code }}</span>
+            <span class="font-mono text-surface-500 text-xs">{{ app.code }}</span>
           </div>
+        </template>
 
-          <div class="flex items-center gap-2 mb-2">
-            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-primary/10 text-primary border border-primary/20">
-              {{ app.document_type }}
-            </span>
-            <span v-if="app.revision_count > 0" class="text-[10px] font-bold text-orange-600">
-              (Revisi ke-{{ app.revision_count }})
-            </span>
+        <template #content>
+          <div class="space-y-2.5">
+            <div class="flex items-center gap-2">
+              <Tag :value="app.document_type" severity="info" class="text-[10px] font-bold uppercase" />
+              <Tag
+                v-if="app.revision_count > 0"
+                :value="`Revisi ke-${app.revision_count}`"
+                severity="warn"
+                class="text-[10px] font-bold"
+              />
+            </div>
+
+            <h3 class="font-brand text-base font-bold text-surface-900 dark:text-surface-0 leading-snug line-clamp-1">
+              {{ app.title }}
+            </h3>
+
+            <p class="text-xs text-surface-600 dark:text-surface-400 line-clamp-2 leading-relaxed">
+              {{ app.description || 'Tidak ada catatan tambahan.' }}
+            </p>
+
+            <div class="text-[11px] text-surface-500">
+              Pemohon: <span class="font-semibold text-surface-800 dark:text-surface-200">{{ app.applicant?.name || '-' }}</span>
+            </div>
           </div>
+        </template>
 
-          <h3 class="font-brand text-base font-bold text-ink leading-snug mb-2 group-hover:text-primary transition-colors">
-            {{ app.title }}
-          </h3>
-
-          <p class="text-xs text-body line-clamp-2 mb-3">
-            {{ app.description || 'Tidak ada catatan tambahan.' }}
-          </p>
-
-          <div class="text-[11px] text-mute mb-2">
-            Pemohon: <span class="font-semibold text-ink">{{ app.applicant?.name || '-' }}</span>
+        <template #footer>
+          <div class="flex items-center justify-between border-t border-surface-200 dark:border-surface-700 pt-3">
+            <Button
+              label="Lihat Berkas"
+              icon="pi pi-file"
+              severity="secondary"
+              size="small"
+              text
+              class="text-xs font-bold"
+              @click="openDetailModal(app)"
+            />
+            <Button
+              label="Beri Penilaian"
+              icon="pi pi-check-square"
+              severity="primary"
+              size="small"
+              class="text-xs font-bold"
+              @click="openReviewModal(app)"
+            />
           </div>
-        </div>
-
-        <div class="flex items-center justify-between border-t border-hairline pt-3 mt-2">
-          <button
-            @click="openDetailModal(app)"
-            class="px-3 py-1.5 bg-surface-soft border border-hairline rounded-sm text-xs font-bold text-ink hover:bg-hairline cursor-pointer transition-colors"
-          >
-            Lihat Berkas
-          </button>
-          <button
-            @click="openReviewModal(app)"
-            class="px-4 py-1.5 bg-primary text-ink text-xs font-bold rounded-sm border-none cursor-pointer hover:bg-primary-dark transition-colors shadow-xs"
-          >
-            Beri Penilaian →
-          </button>
-        </div>
-      </div>
+        </template>
+      </Card>
     </div>
 
     <!-- Empty State -->
-    <div v-else class="flex flex-col items-center justify-center py-20 bg-canvas border border-hairline rounded-sm text-center">
-      <Icon icon="mdi:check-all" class="text-5xl text-emerald-500 mb-3" />
-      <h2 class="text-base font-bold text-ink">Antrean Kosong</h2>
-      <p class="text-xs text-mute max-w-[360px] mt-1">Saat ini tidak ada permohonan dokumen yang menunggu verifikasi atau penilaian.</p>
-    </div>
+    <Card v-else class="border border-surface-200 dark:border-surface-700 shadow-sm text-center py-12">
+      <template #content>
+        <div class="flex flex-col items-center justify-center gap-3">
+          <i class="pi pi-check-circle text-5xl text-emerald-500"></i>
+          <h2 class="text-base font-bold text-surface-900 dark:text-surface-0">Antrean Kosong</h2>
+          <p class="text-xs text-surface-500 max-w-[360px]">
+            Saat ini tidak ada permohonan dokumen yang menunggu verifikasi atau penilaian.
+          </p>
+        </div>
+      </template>
+    </Card>
 
     <!-- Modular Review Modal -->
     <ReviewDecisionModal
@@ -105,7 +118,10 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { Icon } from '@iconify/vue'
+import Card from 'primevue/card'
+import Button from 'primevue/button'
+import Tag from 'primevue/tag'
+import Message from 'primevue/message'
 import { useDocumentStore } from '@/stores/document'
 import StatusBadge from '@/components/StatusBadge.vue'
 import ApplicationDetailModal from '@/components/ApplicationDetailModal.vue'
@@ -159,7 +175,7 @@ async function handleReviewSubmit(payload: { decision: string; note: string }) {
 
     await docStore.fetchApplications()
   } catch {
-    // Error notification handled by docStore
+    // Handled in store
   }
 }
 

@@ -2,192 +2,200 @@
   <div class="max-w-[760px] mx-auto">
     <!-- Header -->
     <div class="mb-6 animate-fade-in-up">
-      <router-link
+      <Button
+        as="router-link"
         to="/pemohon/dashboard"
-        class="inline-flex items-center gap-1.5 text-xs font-bold text-primary no-underline mb-3 hover:text-primary-dark transition-colors"
-      >
-        <Icon icon="mdi:arrow-left" class="text-base" /> Kembali ke Dashboard
-      </router-link>
-      <h1 class="font-brand text-2xl font-bold text-ink mb-1">
+        label="Kembali ke Dashboard"
+        icon="pi pi-arrow-left"
+        severity="secondary"
+        text
+        size="small"
+        class="mb-2 p-0 text-xs font-bold"
+      />
+      <h1 class="font-brand text-2xl font-bold text-surface-900 dark:text-surface-0 mb-1">
         {{ isEdit ? 'Perbaiki Permohonan (Revisi)' : 'Pengajuan Permohonan Dokumen Kelayakan' }}
       </h1>
-      <p class="text-xs text-mute leading-relaxed">
+      <p class="text-xs text-surface-500 leading-relaxed">
         {{ isEdit ? 'Perbarui informasi dan unggah berkas perbaikan sesuai catatan penilai untuk diajukan ulang.' : 'Lengkapi data administrasi dan lampirkan dokumen permohonan yang valid untuk diproses oleh penilai.' }}
       </p>
     </div>
 
-    <!-- Main Form Container -->
-    <div class="relative overflow-hidden bg-canvas border border-hairline rounded-sm p-6 sm:p-8 animate-fade-in-up delay-100 shadow-sm">
-      <div class="absolute top-0 left-0 w-3 h-3 bg-primary"></div>
+    <!-- Main Form Card -->
+    <Card class="border border-surface-200 dark:border-surface-700 shadow-sm animate-fade-in-up delay-100">
+      <template #content>
+        <!-- Error message -->
+        <Message v-if="docStore.error" severity="error" :closable="true" @close="docStore.clearError" class="mb-5 text-xs">
+          {{ docStore.error }}
+        </Message>
 
-      <!-- Error message -->
-      <div v-if="docStore.error" class="flex items-center gap-2.5 px-4 py-3 bg-error/10 border border-error/20 rounded-sm mb-6 text-xs text-error">
-        <Icon icon="mdi:alert-circle" class="text-base flex-shrink-0" />
-        <span class="flex-1">{{ docStore.error }}</span>
-        <button class="bg-transparent border-none text-error cursor-pointer" @click="docStore.clearError">
-          <Icon icon="mdi:close" />
-        </button>
-      </div>
+        <!-- Success Alert -->
+        <Message v-if="successMessage" severity="success" class="mb-5 text-xs">
+          {{ successMessage }}
+        </Message>
 
-      <!-- Success Alert -->
-      <div v-if="successMessage" class="flex items-center gap-2.5 px-4 py-3 bg-primary/10 border border-primary/30 rounded-sm mb-6 text-xs text-success-deep animate-fade-in">
-        <Icon icon="mdi:check-circle" class="text-base flex-shrink-0 text-primary" />
-        <span>{{ successMessage }}</span>
-      </div>
+        <!-- Revision Alert if in Edit Mode -->
+        <Message v-if="isEdit && latestReviewNote" severity="warn" icon="pi pi-exclamation-triangle" class="mb-5 text-xs">
+          <div>
+            <span class="font-bold block mb-1">Catatan Permintaan Revisi dari Penilai:</span>
+            <span class="whitespace-pre-line leading-relaxed">{{ latestReviewNote }}</span>
+          </div>
+        </Message>
 
-      <!-- Revision Alert if in Edit Mode -->
-      <div v-if="isEdit && latestReviewNote" class="bg-orange-500/10 border border-orange-500/30 rounded-sm p-4 mb-6 text-xs">
-        <div class="flex items-center gap-2 font-bold text-orange-600 mb-1.5">
-          <Icon icon="mdi:alert-circle-outline" class="text-base" />
-          <span>Catatan Permintaan Revisi dari Penilai:</span>
-        </div>
-        <p class="text-body leading-relaxed pl-6 whitespace-pre-line">{{ latestReviewNote }}</p>
-      </div>
-
-      <form @submit.prevent="handleSubmit(true)" class="flex flex-col gap-5">
-        <!-- Document Type Selector -->
-        <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-bold uppercase tracking-wider text-ink" for="doc-type">
-            Jenis Dokumen Kelayakan *
-          </label>
-          <select
-            id="doc-type"
-            v-model="form.document_type"
-            required
-            class="w-full h-11 px-4 bg-canvas border border-hairline rounded-sm font-brand text-sm text-ink outline-none transition-colors focus:border-primary focus:border-2 focus:px-[15px]"
-          >
-            <option value="" disabled>Pilih jenis dokumen...</option>
-            <option value="SLF">SLF - Sertifikat Laik Fungsi</option>
-            <option value="AMDAL">AMDAL - Analisis Mengenai Dampak Lingkungan</option>
-            <option value="IMB">IMB - Izin Mendirikan Bangunan</option>
-            <option value="UKL-UPL">UKL-UPL - Upaya Pengelolaan & Pemantauan Lingkungan</option>
-            <option value="SIUP">SIUP - Surat Izin Usaha Perdagangan</option>
-          </select>
-        </div>
-
-        <!-- Title -->
-        <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-bold uppercase tracking-wider text-ink" for="doc-title">
-            Judul / Perihal Permohonan *
-          </label>
-          <input
-            id="doc-title"
-            v-model="form.title"
-            type="text"
-            required
-            placeholder="Contoh: Permohonan AMDAL Pembangunan Gedung Graha Medika"
-            class="w-full h-11 px-4 bg-canvas border border-hairline rounded-sm font-brand text-sm text-ink outline-none transition-colors focus:border-primary focus:border-2 focus:px-[15px] placeholder:text-ash"
-          />
-        </div>
-
-        <!-- Description -->
-        <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-bold uppercase tracking-wider text-ink" for="doc-desc">
-            Keterangan & Rincian Permohonan *
-          </label>
-          <textarea
-            id="doc-desc"
-            v-model="form.description"
-            rows="4"
-            required
-            placeholder="Jelaskan detail permohonan, lokasi kegiatan, atau kelengkapan berkas..."
-            class="w-full px-4 py-3 bg-canvas border border-hairline rounded-sm font-brand text-sm text-ink outline-none resize-y min-h-[100px] transition-colors focus:border-primary focus:border-2 focus:px-[15px] placeholder:text-ash"
-          ></textarea>
-        </div>
-
-        <!-- File Upload Area -->
-        <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-bold uppercase tracking-wider text-ink">
-            Berkas Lampiran Dokumen {{ isEdit ? '(Opsional jika tidak ada berkas baru)' : '*' }}
-          </label>
-          
-          <div
-            class="border-2 border-dashed rounded-sm text-center cursor-pointer transition-all p-6"
-            :class="isDragging ? 'border-primary bg-primary/5' : 'border-hairline hover:border-primary bg-surface-soft/40'"
-            @drop.prevent="handleDrop"
-            @dragover.prevent="isDragging = true"
-            @dragleave="isDragging = false"
-            @click="fileInputRef?.click()"
-          >
-            <input
-              ref="fileInputRef"
-              type="file"
-              multiple
-              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
-              class="hidden"
-              @change="handleFileSelect"
+        <form @submit.prevent="handleSubmit(true)" class="space-y-5">
+          <!-- Document Type Selector -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-bold uppercase tracking-wider text-surface-700 dark:text-surface-300" for="doc-type">
+              Jenis Dokumen Kelayakan *
+            </label>
+            <Select
+              id="doc-type"
+              v-model="form.document_type"
+              :options="documentTypes"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Pilih jenis dokumen..."
+              class="w-full text-sm"
+              required
             />
-            <div class="flex flex-col items-center gap-2">
-              <Icon icon="mdi:cloud-upload-outline" class="text-3xl text-primary" />
-              <span class="text-xs font-bold text-ink">Klik atau tarik file dokumen ke area ini</span>
-              <span class="text-[11px] text-mute">Mendukung format PDF, DOC, DOCX, XLS, XLSX (Maks. 20MB per file)</span>
-            </div>
           </div>
 
-          <!-- Selected Files List -->
-          <div v-if="selectedFiles.length" class="flex flex-col gap-2 mt-2">
-            <span class="text-xs font-bold text-ink">Berkas yang akan diunggah ({{ selectedFiles.length }}):</span>
+          <!-- Title -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-bold uppercase tracking-wider text-surface-700 dark:text-surface-300" for="doc-title">
+              Judul / Perihal Permohonan *
+            </label>
+            <InputText
+              id="doc-title"
+              v-model="form.title"
+              placeholder="Contoh: Permohonan AMDAL Pembangunan Gedung Graha Medika"
+              class="w-full text-sm"
+              required
+            />
+          </div>
+
+          <!-- Description -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-bold uppercase tracking-wider text-surface-700 dark:text-surface-300" for="doc-desc">
+              Keterangan & Rincian Permohonan *
+            </label>
+            <Textarea
+              id="doc-desc"
+              v-model="form.description"
+              rows="4"
+              placeholder="Jelaskan detail permohonan, lokasi kegiatan, atau kelengkapan berkas..."
+              class="w-full text-sm"
+              autoResize
+              required
+            />
+          </div>
+
+          <!-- File Upload Area -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-bold uppercase tracking-wider text-surface-700 dark:text-surface-300">
+              Berkas Lampiran Dokumen {{ isEdit ? '(Opsional jika tidak ada berkas baru)' : '*' }}
+            </label>
+
             <div
-              v-for="(file, idx) in selectedFiles"
-              :key="idx"
-              class="flex items-center justify-between p-2.5 bg-canvas border border-hairline rounded-sm text-xs"
+              class="border-2 border-dashed rounded-lg text-center cursor-pointer transition-all p-6"
+              :class="isDragging ? 'border-primary-500 bg-primary-50 dark:bg-primary-950/20' : 'border-surface-300 dark:border-surface-700 hover:border-primary-500 bg-surface-50 dark:bg-surface-800/40'"
+              @drop.prevent="handleDrop"
+              @dragover.prevent="isDragging = true"
+              @dragleave="isDragging = false"
+              @click="fileInputRef?.click()"
             >
-              <div class="flex items-center gap-2 min-w-0">
-                <Icon icon="mdi:file-check-outline" class="text-primary text-base flex-shrink-0" />
-                <span class="font-medium text-ink truncate">{{ file.name }}</span>
-                <span class="text-mute text-[10px]">({{ formatFileSize(file.size) }})</span>
+              <input
+                ref="fileInputRef"
+                type="file"
+                multiple
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+                class="hidden"
+                @change="handleFileSelect"
+              />
+              <div class="flex flex-col items-center gap-2">
+                <i class="pi pi-cloud-upload text-3xl text-primary-500"></i>
+                <span class="text-xs font-bold text-surface-900 dark:text-surface-0">Klik atau seret file dokumen ke area ini</span>
+                <span class="text-[11px] text-surface-500">Mendukung format PDF, DOC, DOCX, XLS, XLSX (Maks. 20MB per file)</span>
               </div>
-              <button
-                type="button"
-                @click.stop="removeFile(idx)"
-                class="w-6 h-6 flex items-center justify-center bg-transparent border-none text-mute hover:text-error cursor-pointer transition-colors"
+            </div>
+
+            <!-- Selected Files List -->
+            <div v-if="selectedFiles.length" class="space-y-2 mt-2">
+              <span class="text-xs font-bold text-surface-800 dark:text-surface-200">
+                Berkas yang akan diunggah ({{ selectedFiles.length }}):
+              </span>
+              <div
+                v-for="(file, idx) in selectedFiles"
+                :key="idx"
+                class="flex items-center justify-between p-3 bg-surface-50 dark:bg-surface-800/60 border border-surface-200 dark:border-surface-700 rounded-lg text-xs"
               >
-                <Icon icon="mdi:close" />
-              </button>
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <i class="pi pi-file-check text-primary-500 text-lg flex-shrink-0"></i>
+                  <span class="font-medium text-surface-900 dark:text-surface-0 truncate">{{ file.name }}</span>
+                  <Tag :value="formatFileSize(file.size)" severity="secondary" class="text-[10px]" />
+                </div>
+                <Button
+                  icon="pi pi-times"
+                  severity="danger"
+                  text
+                  rounded
+                  size="small"
+                  @click.stop="removeFile(idx)"
+                />
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- Actions -->
-        <div class="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-hairline mt-2">
-          <router-link
-            to="/pemohon/dashboard"
-            class="px-5 py-2.5 bg-transparent border border-hairline rounded-sm font-brand text-xs font-bold text-ink no-underline hover:bg-surface-soft transition-colors"
-          >
-            Batal
-          </router-link>
+          <!-- Actions -->
+          <div class="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-surface-200 dark:border-surface-700 mt-4">
+            <Button
+              as="router-link"
+              to="/pemohon/dashboard"
+              label="Batal"
+              severity="secondary"
+              text
+              size="small"
+            />
 
-          <div class="flex items-center gap-2">
-            <button
-              v-if="!isEdit"
-              type="button"
-              :disabled="docStore.loading || !form.title.trim()"
-              @click="handleSubmit(false)"
-              class="px-5 py-2.5 bg-surface-soft border border-hairline rounded-sm font-brand text-xs font-bold text-ink cursor-pointer hover:bg-hairline transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Simpan Draft Saja
-            </button>
+            <div class="flex items-center gap-2">
+              <Button
+                v-if="!isEdit"
+                type="button"
+                label="Simpan Draft Saja"
+                icon="pi pi-save"
+                severity="secondary"
+                outlined
+                size="small"
+                :disabled="docStore.loading || !form.title.trim()"
+                @click="handleSubmit(false)"
+              />
 
-            <button
-              type="submit"
-              :disabled="docStore.loading || !isFormValid"
-              class="inline-flex items-center gap-2 px-6 py-2.5 bg-primary text-ink border-none rounded-sm font-brand text-xs font-bold cursor-pointer hover:bg-primary-dark transition-all shadow-sm disabled:bg-surface-soft disabled:text-ash disabled:cursor-not-allowed"
-            >
-              <span v-if="docStore.loading" class="w-3.5 h-3.5 border-2 border-transparent border-t-current rounded-full animate-spin"></span>
-              <Icon v-else icon="mdi:send" />
-              <span>{{ submitButtonLabel }}</span>
-            </button>
+              <Button
+                type="submit"
+                :label="submitButtonLabel"
+                :icon="isEdit ? 'pi pi-refresh' : 'pi pi-send'"
+                severity="primary"
+                size="small"
+                :loading="docStore.loading"
+                :disabled="docStore.loading || !isFormValid"
+              />
+            </div>
           </div>
-        </div>
-      </form>
-    </div>
+        </form>
+      </template>
+    </Card>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Icon } from '@iconify/vue'
+import Card from 'primevue/card'
+import Button from 'primevue/button'
+import InputText from 'primevue/inputtext'
+import Textarea from 'primevue/textarea'
+import Select from 'primevue/select'
+import Message from 'primevue/message'
+import Tag from 'primevue/tag'
 import { useDocumentStore } from '@/stores/document'
 import { formatFileSize } from '@/utils/formatters'
 
@@ -202,6 +210,14 @@ const successMessage = ref('')
 const latestReviewNote = ref('')
 
 const isEdit = computed(() => !!route.query.edit)
+
+const documentTypes = [
+  { label: 'SLF - Sertifikat Laik Fungsi', value: 'SLF' },
+  { label: 'AMDAL - Analisis Mengenai Dampak Lingkungan', value: 'AMDAL' },
+  { label: 'IMB - Izin Mendirikan Bangunan', value: 'IMB' },
+  { label: 'UKL-UPL - Upaya Pengelolaan & Pemantauan Lingkungan', value: 'UKL-UPL' },
+  { label: 'SIUP - Surat Izin Usaha Perdagangan', value: 'SIUP' },
+]
 
 const form = reactive({
   title: '',
@@ -244,7 +260,6 @@ function removeFile(index: number) {
   selectedFiles.value.splice(index, 1)
   if (fileInputRef.value) fileInputRef.value.value = ''
 }
-
 
 async function handleSubmit(autoSubmit: boolean) {
   if (!form.title.trim() || !form.description.trim()) return
