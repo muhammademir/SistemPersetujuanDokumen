@@ -1,23 +1,20 @@
 <template>
-  <div class="flex min-h-screen bg-background">
+  <div class="flex min-h-screen bg-[#f8f9fb]">
     <!-- Sidebar -->
     <aside
-      class="fixed top-0 left-0 bottom-0 z-40 w-[260px] bg-neutral-950 text-white flex flex-col transition-transform duration-300 border-r border-neutral-800"
+      class="fixed top-0 left-0 bottom-0 z-40 w-[240px] bg-white flex flex-col transition-transform duration-300 border-r border-gray-200"
       :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
     >
       <!-- Brand Header -->
-      <div class="flex items-center gap-3 px-5 py-5 border-b border-neutral-800">
-        <div class="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shrink-0 font-bold">
+      <div class="flex items-center gap-2.5 px-5 h-[60px] border-b border-gray-100">
+        <div class="w-8 h-8 rounded-lg bg-[#3b49f5] text-white flex items-center justify-center shrink-0">
           <FileCheck class="w-4 h-4" />
         </div>
-        <div class="flex flex-col flex-1">
-          <span class="text-base font-bold leading-tight tracking-tight">SiPerDok</span>
-          <span class="text-[10px] font-bold uppercase text-primary tracking-wider mt-0.5">{{ roleLabel }}</span>
-        </div>
+        <span class="text-[13px] font-bold text-gray-900 tracking-tight leading-tight">Sistem Persetujuan Dokumen</span>
         <Button
           variant="ghost"
           size="icon"
-          class="lg:hidden text-neutral-400 hover:text-white hover:bg-neutral-800 w-8 h-8"
+          class="lg:hidden ml-auto text-gray-400 hover:text-gray-700 hover:bg-gray-100 w-7 h-7"
           @click="sidebarOpen = false"
         >
           <X class="w-4 h-4" />
@@ -25,119 +22,135 @@
       </div>
 
       <!-- Navigation Links -->
-      <nav class="flex-1 px-3 py-4 flex flex-col gap-1.5 overflow-y-auto">
-        <span class="block px-3 pb-2 text-[10px] font-bold uppercase text-neutral-400 tracking-widest">MENU UTAMA</span>
+      <nav class="flex-1 px-3 py-4 flex flex-col gap-0.5 overflow-y-auto">
         <router-link
           v-for="item in navItems"
           :key="item.path"
           :to="item.path"
-          class="group relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-300 text-xs font-semibold no-underline transition-all hover:bg-neutral-850 hover:text-white"
-          active-class="!bg-neutral-800 !text-white font-bold"
+          class="group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium text-gray-600 no-underline transition-all duration-150 hover:bg-gray-50 hover:text-gray-900"
+          active-class="!bg-[#eef0ff] !text-[#3b49f5] !font-semibold"
           @click="sidebarOpen = false"
         >
-          <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-primary rounded-r-md opacity-0 group-[.router-link-active]:opacity-100 transition-opacity"></div>
-          <component :is="item.icon" class="w-4 h-4 shrink-0 text-neutral-400 group-hover:text-white group-[.router-link-active]:text-primary" />
+          <component
+            :is="item.icon"
+            class="w-[18px] h-[18px] shrink-0 text-gray-400 group-hover:text-gray-600 group-[.router-link-active]:text-[#3b49f5]"
+          />
           <span class="flex-1">{{ item.label }}</span>
-          <Badge
+          <span
             v-if="item.badge"
-            variant="secondary"
-            class="text-[10px] bg-amber-500/20 text-amber-400 border-amber-500/30"
+            class="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold bg-red-500 text-white"
           >
             {{ item.badge }}
-          </Badge>
+          </span>
         </router-link>
       </nav>
 
-      <!-- Sidebar footer / user info -->
-      <div class="flex items-center justify-between px-5 py-4 border-t border-neutral-800 bg-neutral-950">
-        <div class="flex items-center gap-2.5 flex-1 min-w-0">
-          <Avatar class="h-8 w-8 bg-primary text-primary-foreground font-bold text-xs">
-            <AvatarFallback class="bg-primary text-primary-foreground font-bold text-xs">
-              {{ authStore.userInitials }}
-            </AvatarFallback>
-          </Avatar>
-          <div class="flex flex-col min-w-0">
-            <span class="text-xs font-bold truncate text-white">{{ authStore.userName }}</span>
-            <span class="text-[10px] text-neutral-400 truncate capitalize">{{ authStore.userRole }}</span>
+      <!-- Sidebar Footer -->
+      <div class="px-4 py-3 border-t border-gray-100">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-full bg-[#3b49f5] text-white flex items-center justify-center text-[11px] font-bold shrink-0">
+            {{ authStore.userInitials }}
           </div>
+          <div class="flex flex-col min-w-0 flex-1">
+            <span class="text-[13px] font-semibold text-gray-900 truncate">{{ authStore.userName }}</span>
+            <span class="text-[11px] text-gray-400 truncate capitalize">{{ authStore.userRole }}</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            class="text-gray-400 hover:text-red-500 hover:bg-red-50 w-7 h-7 shrink-0"
+            title="Keluar"
+            @click="handleLogout"
+          >
+            <LogOut class="w-4 h-4" />
+          </Button>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          class="text-neutral-400 hover:text-red-400 hover:bg-neutral-900 w-8 h-8"
-          title="Keluar"
-          @click="handleLogout"
-        >
-          <LogOut class="w-4 h-4" />
-        </Button>
       </div>
     </aside>
 
     <!-- Mobile overlay -->
     <div
       v-if="sidebarOpen"
-      class="fixed inset-0 bg-black/60 z-35 lg:hidden animate-fade-in backdrop-blur-xs"
+      class="fixed inset-0 bg-black/40 z-35 lg:hidden animate-fade-in backdrop-blur-[2px]"
       @click="sidebarOpen = false"
     ></div>
 
     <!-- Main Content Area -->
-    <div class="flex-1 flex flex-col min-h-screen ml-0 lg:ml-[260px] transition-[margin] duration-300">
+    <div class="flex-1 flex flex-col min-h-screen ml-0 lg:ml-[240px] transition-[margin] duration-300">
       <!-- Topbar Header -->
-      <header class="sticky top-0 z-30 flex items-center justify-between h-14 px-6 bg-card border-b">
+      <header class="sticky top-0 z-30 flex items-center justify-between h-[60px] px-5 sm:px-6 bg-white border-b border-gray-200">
         <div class="flex items-center gap-3">
           <Button
             variant="ghost"
             size="icon"
-            class="lg:hidden w-8 h-8"
+            class="lg:hidden w-8 h-8 text-gray-500 hover:text-gray-700 hover:bg-gray-100"
             @click="sidebarOpen = true"
           >
-            <Menu class="w-4 h-4" />
+            <Menu class="w-5 h-5" />
           </Button>
-          <span class="text-sm font-bold text-foreground">{{ currentPageTitle }}</span>
+          <div class="hidden lg:block">
+            <h1 class="text-[15px] font-bold text-gray-900 leading-tight">{{ currentPageTitle }}</h1>
+            <p class="text-[11px] text-gray-400 font-medium mt-0.5">{{ currentPageDescription }}</p>
+          </div>
         </div>
 
-        <!-- User Profile Dropdown Button -->
-        <DropdownMenu>
-          <DropdownMenuTrigger as-child>
-            <Button
-              variant="ghost"
-              size="sm"
-              class="flex items-center gap-2 px-2 py-1.5 h-auto rounded-lg hover:bg-accent"
-            >
-              <Avatar class="h-7 w-7 bg-primary text-primary-foreground">
-                <AvatarFallback class="bg-primary text-primary-foreground font-bold text-[11px]">
-                  {{ authStore.userInitials }}
-                </AvatarFallback>
-              </Avatar>
-              <span class="hidden sm:block text-xs font-semibold text-foreground">
-                {{ authStore.userName }}
-              </span>
-              <ChevronDown class="w-3.5 h-3.5 text-muted-foreground" />
-            </Button>
-          </DropdownMenuTrigger>
+        <div class="flex items-center gap-2">
+          <!-- Notification Bell -->
+          <Button
+            variant="ghost"
+            size="icon"
+            class="relative w-9 h-9 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
+          >
+            <Bell class="w-[18px] h-[18px]" />
+            <span
+              v-if="notificationCount > 0"
+              class="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500"
+            ></span>
+          </Button>
 
-          <DropdownMenuContent align="end" class="w-56">
-            <DropdownMenuLabel class="font-normal p-3 bg-muted/40 rounded-t-md">
-              <div class="text-xs font-bold text-foreground">{{ authStore.userName }}</div>
-              <div class="text-[11px] text-muted-foreground truncate mt-0.5">{{ authStore.user?.email }}</div>
-              <Badge variant="secondary" class="mt-1.5 text-[9px] uppercase font-bold">
-                {{ authStore.userRole }}
-              </Badge>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              class="text-xs font-semibold text-destructive cursor-pointer focus:text-destructive focus:bg-destructive/10"
-              @click="handleLogout"
-            >
-              <LogOut class="w-4 h-4 mr-2" />
-              <span>Keluar dari Akun</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+          <!-- User Profile Dropdown -->
+          <DropdownMenu>
+            <DropdownMenuTrigger as-child>
+              <Button
+                variant="ghost"
+                size="sm"
+                class="flex items-center gap-2 px-2 py-1.5 h-auto rounded-lg hover:bg-gray-50"
+              >
+                <div class="w-8 h-8 rounded-full bg-[#3b49f5] text-white flex items-center justify-center text-[11px] font-bold">
+                  {{ authStore.userInitials }}
+                </div>
+                <div class="hidden sm:flex flex-col items-start">
+                  <span class="text-[13px] font-semibold text-gray-900 leading-tight">
+                    {{ authStore.userName }}
+                  </span>
+                  <span class="text-[11px] text-gray-400 capitalize leading-tight">
+                    {{ authStore.userRole }}
+                  </span>
+                </div>
+                <ChevronDown class="w-3.5 h-3.5 text-gray-400 hidden sm:block" />
+              </Button>
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent align="end" class="w-56">
+              <DropdownMenuLabel class="font-normal p-3">
+                <div class="text-sm font-semibold text-gray-900">{{ authStore.userName }}</div>
+                <div class="text-xs text-gray-500 truncate mt-0.5">{{ authStore.user?.email }}</div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                class="text-xs font-medium text-red-600 cursor-pointer focus:text-red-600 focus:bg-red-50"
+                @click="handleLogout"
+              >
+                <LogOut class="w-4 h-4 mr-2" />
+                <span>Keluar dari Akun</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </header>
 
       <!-- Main View Content -->
-      <main class="flex-1 p-4 sm:p-6 lg:p-8">
+      <main class="flex-1 p-4 sm:p-6">
         <router-view v-slot="{ Component }">
           <transition name="page" mode="out-in">
             <component :is="Component" />
@@ -151,8 +164,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -172,6 +183,7 @@ import {
   Inbox,
   History,
   PlusCircle,
+  Bell,
 } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import { useDocumentStore } from '@/stores/document'
@@ -182,30 +194,51 @@ const route = useRoute()
 
 const sidebarOpen = ref(false)
 
-const roleLabel = computed(() => (authStore.isPenilai ? 'Panel Penilai' : 'Panel Pemohon'))
-
 const currentPageTitle = computed(() => {
   const map: Record<string, string> = {
-    DashboardPemohon: 'Dashboard Pemohon',
+    DashboardPemohon: 'Dashboard',
     SubmitDocument: 'Pengajuan Dokumen',
-    DashboardPenilai: 'Dashboard Penilai',
-    ReviewQueue: 'Antrean Penilaian Dokumen',
-    ReviewHistory: 'Riwayat Hasil Penilaian',
+    DashboardPenilai: 'Dashboard',
+    ReviewQueue: 'Antrean Penilaian',
+    ReviewHistory: 'Riwayat Penilaian',
   }
   return map[route.name?.toString() ?? ''] ?? 'Sistem Persetujuan Dokumen'
+})
+
+const currentPageDescription = computed(() => {
+  const map: Record<string, string> = {
+    DashboardPemohon: 'Pantau dan kelola permohonan dokumen Anda',
+    SubmitDocument: 'Buat permohonan dokumen baru',
+    DashboardPenilai: 'Tinjau dan verifikasi permohonan dari semua pemohon',
+    ReviewQueue: 'Daftar permohonan yang menunggu penilaian',
+    ReviewHistory: 'Riwayat penilaian yang telah diselesaikan',
+  }
+  return map[route.name?.toString() ?? ''] ?? ''
+})
+
+const notificationCount = computed(() => {
+  if (authStore.isPenilai) {
+    return docStore.pendingApplications.length
+  }
+  return 0
 })
 
 const navItems = computed(() => {
   if (authStore.isPenilai) {
     return [
-      { path: '/penilai/dashboard', label: 'Dashboard Utama', icon: LayoutDashboard, badge: null },
-      { path: '/penilai/review', label: 'Antrean Penilaian', icon: Inbox, badge: docStore.pendingApplications.length || null },
+      { path: '/penilai/dashboard', label: 'Dashboard', icon: LayoutDashboard, badge: null },
+      {
+        path: '/penilai/review',
+        label: 'Antrean Penilaian',
+        icon: Inbox,
+        badge: docStore.pendingApplications.length || null,
+      },
       { path: '/penilai/history', label: 'Riwayat Penilaian', icon: History, badge: null },
     ]
   }
   return [
-    { path: '/pemohon/dashboard', label: 'Dashboard & Permohonan', icon: LayoutDashboard, badge: null },
-    { path: '/pemohon/submit', label: 'Buat Permohonan Baru', icon: PlusCircle, badge: null },
+    { path: '/pemohon/dashboard', label: 'Dashboard', icon: LayoutDashboard, badge: null },
+    { path: '/pemohon/submit', label: 'Buat Permohonan', icon: PlusCircle, badge: null },
   ]
 })
 
@@ -218,7 +251,10 @@ onMounted(() => {
   docStore.fetchApplications()
 })
 
-watch(() => route.path, () => {
-  sidebarOpen.value = false
-})
+watch(
+  () => route.path,
+  () => {
+    sidebarOpen.value = false
+  }
+)
 </script>

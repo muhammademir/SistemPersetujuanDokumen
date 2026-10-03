@@ -84,7 +84,7 @@ const badgeStyle = computed(() => {
     default:
       return {
         icon: FileText,
-        classes: 'bg-muted text-muted-foreground border-border'
+        classes: 'bg-gray-100 text-gray-500 border-gray-200'
       }
   }
 })

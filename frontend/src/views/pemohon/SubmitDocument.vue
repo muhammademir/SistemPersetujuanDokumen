@@ -6,23 +6,23 @@
         as-child
         variant="ghost"
         size="sm"
-        class="mb-2 p-0 text-xs font-semibold gap-1.5 text-muted-foreground hover:text-foreground h-auto"
+        class="mb-2 p-0 text-xs font-semibold gap-1.5 text-gray-500 hover:text-gray-900 h-auto"
       >
         <router-link to="/pemohon/dashboard">
           <ArrowLeft class="w-3.5 h-3.5" />
           <span>Kembali ke Dashboard</span>
         </router-link>
       </Button>
-      <h1 class="text-2xl font-bold text-foreground mb-1">
+      <h1 class="text-xl font-bold text-gray-900 leading-tight mb-1">
         {{ isEdit ? 'Perbaiki Permohonan (Revisi)' : 'Pengajuan Permohonan Dokumen Kelayakan' }}
       </h1>
-      <p class="text-xs text-muted-foreground leading-relaxed">
+      <p class="text-[13px] text-gray-500 leading-relaxed">
         {{ isEdit ? 'Perbarui informasi dan unggah berkas perbaikan sesuai catatan penilai untuk diajukan ulang.' : 'Lengkapi data administrasi dan lampirkan dokumen permohonan yang valid untuk diproses oleh penilai.' }}
       </p>
     </div>
 
     <!-- Main Form Card -->
-    <Card class="shadow-sm border animate-fade-in-up delay-100">
+    <Card class="border-gray-200 animate-fade-in-up delay-100">
       <CardContent class="p-6 space-y-5">
         <!-- Error message -->
         <Alert v-if="docStore.error" variant="destructive" class="py-2.5">
@@ -32,14 +32,14 @@
         </Alert>
 
         <!-- Success Alert -->
-        <Alert v-if="successMessage" class="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 py-2.5">
+        <Alert v-if="successMessage" class="bg-emerald-50 text-emerald-700 border-emerald-200 py-2.5">
           <AlertDescription class="text-xs">
             {{ successMessage }}
           </AlertDescription>
         </Alert>
 
         <!-- Revision Alert if in Edit Mode -->
-        <Alert v-if="isEdit && latestReviewNote" class="bg-amber-500/10 text-amber-800 dark:text-amber-200 border-amber-500/30 py-3">
+        <Alert v-if="isEdit && latestReviewNote" class="bg-amber-50 text-amber-800 border-amber-200 py-3">
           <AlertTriangle class="w-4 h-4 text-amber-600" />
           <AlertDescription class="text-xs">
             <span class="font-bold block mb-1">Catatan Permintaan Revisi dari Penilai:</span>
@@ -50,7 +50,7 @@
         <form @submit.prevent="handleSubmit(true)" class="space-y-5">
           <!-- Document Type Selector -->
           <div class="space-y-1.5">
-            <label class="text-xs font-bold uppercase tracking-wider text-foreground" for="doc-type">
+            <label class="text-[12px] font-bold uppercase tracking-wider text-gray-700" for="doc-type">
               Jenis Dokumen Kelayakan *
             </label>
             <Select v-model="form.document_type">
@@ -67,7 +67,7 @@
 
           <!-- Title -->
           <div class="space-y-1.5">
-            <label class="text-xs font-bold uppercase tracking-wider text-foreground" for="doc-title">
+            <label class="text-[12px] font-bold uppercase tracking-wider text-gray-700" for="doc-title">
               Judul / Perihal Permohonan *
             </label>
             <Input
@@ -81,7 +81,7 @@
 
           <!-- Description -->
           <div class="space-y-1.5">
-            <label class="text-xs font-bold uppercase tracking-wider text-foreground" for="doc-desc">
+            <label class="text-[12px] font-bold uppercase tracking-wider text-gray-700" for="doc-desc">
               Keterangan & Rincian Permohonan *
             </label>
             <Textarea
@@ -96,13 +96,13 @@
 
           <!-- File Upload Area -->
           <div class="space-y-1.5">
-            <label class="text-xs font-bold uppercase tracking-wider text-foreground">
+            <label class="text-[12px] font-bold uppercase tracking-wider text-gray-700">
               Berkas Lampiran Dokumen {{ isEdit ? '(Opsional jika tidak ada berkas baru)' : '*' }}
             </label>
 
             <div
               class="border-2 border-dashed rounded-lg text-center cursor-pointer transition-all p-6"
-              :class="isDragging ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50 bg-muted/20'"
+              :class="isDragging ? 'border-[#3b49f5] bg-[#eef0ff]' : 'border-gray-300 hover:border-[#3b49f5]/50 bg-gray-50/50'"
               @drop.prevent="handleDrop"
               @dragover.prevent="isDragging = true"
               @dragleave="isDragging = false"
@@ -117,25 +117,25 @@
                 @change="handleFileSelect"
               />
               <div class="flex flex-col items-center gap-2">
-                <UploadCloud class="w-8 h-8 text-primary" />
-                <span class="text-xs font-bold text-foreground">Klik atau seret file dokumen ke area ini</span>
-                <span class="text-[11px] text-muted-foreground">Mendukung format PDF, DOC, DOCX, XLS, XLSX (Maks. 20MB per file)</span>
+                <UploadCloud class="w-8 h-8 text-[#3b49f5]" />
+                <span class="text-[12px] font-bold text-gray-700">Klik atau seret file dokumen ke area ini</span>
+                <span class="text-[11px] text-gray-400">Mendukung format PDF, DOC, DOCX, XLS, XLSX (Maks. 20MB per file)</span>
               </div>
             </div>
 
             <!-- Selected Files List -->
             <div v-if="selectedFiles.length" class="space-y-2 mt-2">
-              <span class="text-xs font-bold text-foreground">
+              <span class="text-[12px] font-bold text-gray-700">
                 Berkas yang akan diunggah ({{ selectedFiles.length }}):
               </span>
               <div
                 v-for="(file, idx) in selectedFiles"
                 :key="idx"
-                class="flex items-center justify-between p-3 bg-muted/40 border rounded-lg text-xs"
+                class="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg text-xs"
               >
                 <div class="flex items-center gap-2.5 min-w-0">
-                  <FileCheck class="w-4 h-4 text-primary shrink-0" />
-                  <span class="font-medium text-foreground truncate">{{ file.name }}</span>
+                  <FileCheck class="w-4 h-4 text-[#3b49f5] shrink-0" />
+                  <span class="font-medium text-gray-700 truncate">{{ file.name }}</span>
                   <Badge variant="secondary" class="text-[10px]">
                     {{ formatFileSize(file.size) }}
                   </Badge>
@@ -144,7 +144,7 @@
                   type="button"
                   variant="ghost"
                   size="icon"
-                  class="h-6 w-6 text-destructive hover:bg-destructive/10"
+                  class="h-6 w-6 text-red-500 hover:bg-red-50"
                   @click.stop="removeFile(idx)"
                 >
                   <X class="w-3.5 h-3.5" />
@@ -154,7 +154,7 @@
           </div>
 
           <!-- Actions -->
-          <div class="flex flex-wrap items-center justify-between gap-3 pt-4 border-t mt-4">
+          <div class="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-gray-100 mt-4">
             <Button
               as-child
               variant="outline"
@@ -182,7 +182,7 @@
               <Button
                 type="submit"
                 size="sm"
-                class="gap-1.5"
+                class="gap-1.5 bg-[#3b49f5] hover:bg-[#2f3ce0] text-white"
                 :disabled="docStore.loading || !isFormValid"
               >
                 <Loader2 v-if="docStore.loading" class="w-3.5 h-3.5 animate-spin" />

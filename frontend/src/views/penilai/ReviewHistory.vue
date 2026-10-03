@@ -1,35 +1,45 @@
 <template>
-  <div class="max-w-[1240px] mx-auto flex flex-col gap-6">
+  <div class="max-w-[1200px] mx-auto flex flex-col gap-5">
     <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
       <div>
-        <h1 class="text-2xl font-bold text-foreground mb-1">
+        <h1 class="text-xl font-bold text-gray-900 leading-tight">
           Riwayat Hasil Penilaian
         </h1>
-        <p class="text-xs text-muted-foreground">
+        <p class="text-[13px] text-gray-500 mt-0.5">
           Daftar seluruh keputusan verifikasi dan review yang telah Anda berikan
         </p>
       </div>
       <Badge
         variant="secondary"
-        class="text-xs font-semibold px-3 py-1.5 self-start sm:self-auto"
+        class="text-[12px] font-semibold px-3 py-1.5 self-start sm:self-auto bg-gray-100 text-gray-600"
       >
         Total Riwayat: {{ historyReviews.length }}
       </Badge>
     </div>
 
-    <!-- Table of Reviews using shadcn Table -->
-    <Card class="shadow-sm border">
+    <!-- Table of Reviews -->
+    <Card class="border-gray-200">
       <CardContent class="p-0">
         <div class="rounded-md">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead class="text-xs font-bold min-w-[150px]">Waktu Penilaian</TableHead>
-                <TableHead class="text-xs font-bold min-w-[260px]">Permohonan Dokumen</TableHead>
-                <TableHead class="text-xs font-bold min-w-[140px]">Keputusan</TableHead>
-                <TableHead class="text-xs font-bold min-w-[280px]">Catatan Reviewer</TableHead>
-                <TableHead class="text-xs font-bold text-right min-w-[100px]">Aksi</TableHead>
+              <TableRow class="bg-gray-50 hover:bg-gray-50">
+                <TableHead class="text-[12px] font-semibold text-gray-500 min-w-[150px]">
+                  Waktu Penilaian
+                </TableHead>
+                <TableHead class="text-[12px] font-semibold text-gray-500 min-w-[260px]">
+                  Permohonan Dokumen
+                </TableHead>
+                <TableHead class="text-[12px] font-semibold text-gray-500 min-w-[140px]">
+                  Keputusan
+                </TableHead>
+                <TableHead class="text-[12px] font-semibold text-gray-500 min-w-[280px]">
+                  Catatan Reviewer
+                </TableHead>
+                <TableHead class="text-[12px] font-semibold text-gray-500 text-right min-w-[100px]">
+                  Aksi
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -37,25 +47,27 @@
                 <TableRow
                   v-for="data in paginatedReviews"
                   :key="data.id"
-                  class="hover:bg-muted/50"
+                  class="hover:bg-gray-50/50"
                 >
-                  <TableCell class="text-xs text-muted-foreground font-medium whitespace-nowrap">
+                  <TableCell class="text-[12px] text-gray-500 font-medium whitespace-nowrap">
                     {{ formatDateTime(data.reviewed_at || data.created_at) }}
                   </TableCell>
 
                   <TableCell>
                     <div class="flex flex-col">
                       <div class="flex items-center gap-1.5 mb-1">
-                        <span class="font-mono text-muted-foreground text-[10px]">{{ data.application?.code || '-' }}</span>
+                        <span class="font-mono text-gray-400 text-[11px]">
+                          {{ data.application?.code || '-' }}
+                        </span>
                         <Badge
                           v-if="data.application?.document_type"
                           variant="outline"
-                          class="text-[9px] font-bold uppercase"
+                          class="text-[9px] font-semibold uppercase text-gray-500 border-gray-300"
                         >
                           {{ data.application.document_type }}
                         </Badge>
                       </div>
-                      <span class="font-bold text-foreground text-xs truncate max-w-[280px]">
+                      <span class="font-semibold text-gray-900 text-[13px] truncate max-w-[280px]">
                         {{ data.application?.title || 'Permohonan' }}
                       </span>
                     </div>
@@ -71,7 +83,7 @@
                   </TableCell>
 
                   <TableCell>
-                    <p class="text-xs text-foreground line-clamp-2 max-w-[320px]">
+                    <p class="text-[12px] text-gray-600 line-clamp-2 max-w-[320px]">
                       {{ data.note || '-' }}
                     </p>
                   </TableCell>
@@ -81,7 +93,7 @@
                       v-if="data.application_id"
                       variant="ghost"
                       size="sm"
-                      class="h-7 px-2 text-xs font-medium gap-1 text-muted-foreground hover:text-foreground"
+                      class="h-7 px-2 text-[12px] font-medium gap-1 text-gray-500 hover:text-gray-900 hover:bg-gray-100"
                       @click="viewAppDetail(data.application_id)"
                     >
                       <Eye class="w-3.5 h-3.5" />
@@ -92,11 +104,16 @@
               </template>
               <TableRow v-else>
                 <TableCell colspan="5" class="h-44 text-center">
-                  <div class="flex flex-col items-center justify-center text-muted-foreground text-xs gap-2 py-8">
+                  <div
+                    class="flex flex-col items-center justify-center text-gray-400 text-xs gap-2 py-8"
+                  >
                     <History class="w-10 h-10 mb-1" />
-                    <h3 class="text-sm font-bold text-foreground">Belum Ada Riwayat Penilaian</h3>
-                    <p class="text-xs text-muted-foreground max-w-[320px] text-center">
-                      Setiap permohonan yang Anda setujui, tolak, atau minta revisi akan tercatat di halaman ini.
+                    <h3 class="text-[14px] font-bold text-gray-700">
+                      Belum Ada Riwayat Penilaian
+                    </h3>
+                    <p class="text-[12px] text-gray-400 max-w-[320px] text-center">
+                      Setiap permohonan yang Anda setujui, tolak, atau minta revisi akan tercatat
+                      di halaman ini.
                     </p>
                   </div>
                 </TableCell>
@@ -106,13 +123,21 @@
         </div>
 
         <!-- Pagination Controls -->
-        <div v-if="historyReviews.length > itemsPerPage" class="flex items-center justify-between p-4 border-t text-xs text-muted-foreground">
-          <span>Menampilkan {{ (currentPage - 1) * itemsPerPage + 1 }} - {{ Math.min(currentPage * itemsPerPage, historyReviews.length) }} dari {{ historyReviews.length }} riwayat</span>
+        <div
+          v-if="historyReviews.length > itemsPerPage"
+          class="flex items-center justify-between p-4 border-t border-gray-100 text-[12px] text-gray-500"
+        >
+          <span>
+            Menampilkan
+            {{ (currentPage - 1) * itemsPerPage + 1 }} -
+            {{ Math.min(currentPage * itemsPerPage, historyReviews.length) }} dari
+            {{ historyReviews.length }} riwayat
+          </span>
           <div class="flex items-center gap-1.5">
             <Button
               variant="outline"
               size="icon"
-              class="h-7 w-7"
+              class="h-7 w-7 border-gray-200"
               :disabled="currentPage <= 1"
               @click="currentPage--"
             >
@@ -122,7 +147,7 @@
             <Button
               variant="outline"
               size="icon"
-              class="h-7 w-7"
+              class="h-7 w-7 border-gray-200"
               :disabled="currentPage >= totalPages"
               @click="currentPage++"
             >
@@ -171,7 +196,9 @@ const selectedApplication = ref<Application | null>(null)
 const currentPage = ref(1)
 const itemsPerPage = ref(10)
 
-const totalPages = computed(() => Math.ceil(historyReviews.value.length / itemsPerPage.value) || 1)
+const totalPages = computed(
+  () => Math.ceil(historyReviews.value.length / itemsPerPage.value) || 1
+)
 
 const paginatedReviews = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage.value
@@ -199,13 +226,13 @@ async function viewAppDetail(appId: number) {
 function getDecisionBadgeClass(dec: string): string {
   switch (dec) {
     case 'approved':
-      return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+      return 'bg-emerald-50 text-emerald-600 border-emerald-200'
     case 'revision_required':
-      return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
+      return 'bg-amber-50 text-amber-600 border-amber-200'
     case 'rejected':
-      return 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20'
+      return 'bg-red-50 text-red-600 border-red-200'
     default:
-      return 'bg-muted text-muted-foreground'
+      return 'bg-gray-100 text-gray-500'
   }
 }
 

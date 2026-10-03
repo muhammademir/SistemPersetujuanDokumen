@@ -1,38 +1,45 @@
 <template>
   <Card
-    class="cursor-pointer transition-all hover:shadow-md hover:border-primary/50 flex flex-col justify-between h-full group"
+    class="cursor-pointer transition-all hover:shadow-md hover:border-[#3b49f5]/30 flex flex-col justify-between h-full group border-gray-200"
     @click="$emit('click', application)"
   >
     <CardHeader class="p-4 pb-0 flex flex-row items-center justify-between gap-2 space-y-0">
       <StatusBadge :status="application.status" />
-      <span class="text-xs text-muted-foreground font-mono">{{ application.code || formattedDate }}</span>
+      <span class="text-[11px] text-gray-400 font-mono">
+        {{ application.code || formattedDate }}
+      </span>
     </CardHeader>
 
     <CardContent class="p-4 pt-3 space-y-3">
       <div class="flex items-center gap-1.5 flex-wrap">
-        <Badge variant="secondary" class="text-[10px] font-semibold">
+        <Badge
+          variant="outline"
+          class="text-[10px] font-semibold uppercase text-gray-500 border-gray-300"
+        >
           {{ application.document_type || 'DOKUMEN' }}
         </Badge>
         <Badge
           v-if="application.revision_count > 0"
-          variant="outline"
-          class="text-[10px] font-semibold text-amber-600 border-amber-500/30 bg-amber-500/10"
+          variant="secondary"
+          class="text-[10px] font-semibold text-amber-600 bg-amber-50 border border-amber-200"
         >
           Revisi #{{ application.revision_count }}
         </Badge>
       </div>
 
-      <h3 class="text-base font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
+      <h3
+        class="text-[14px] font-bold text-gray-900 group-hover:text-[#3b49f5] transition-colors line-clamp-1"
+      >
         {{ application.title }}
       </h3>
 
-      <p class="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+      <p class="text-[12px] text-gray-400 line-clamp-2 leading-relaxed">
         {{ application.description || 'Tidak ada keterangan tambahan.' }}
       </p>
     </CardContent>
 
-    <CardFooter class="p-4 pt-0 flex items-center justify-between border-t mt-auto pt-3">
-      <div class="flex items-center gap-1.5 text-xs text-muted-foreground">
+    <CardFooter class="p-4 pt-0 flex items-center justify-between border-t border-gray-100 mt-auto pt-3">
+      <div class="flex items-center gap-1.5 text-[11px] text-gray-400">
         <Paperclip class="w-3.5 h-3.5" />
         <span>{{ application.documents_count ?? (application.documents?.length || 0) }} Berkas</span>
         <span v-if="application.applicant?.name" class="truncate max-w-[120px]">
@@ -43,7 +50,7 @@
       <Button
         variant="ghost"
         size="sm"
-        class="h-7 px-2 text-xs font-semibold gap-1 text-primary hover:text-primary"
+        class="h-7 px-2 text-[12px] font-semibold gap-1 text-[#3b49f5] hover:text-[#2f3ce0] hover:bg-[#eef0ff]"
         @click.stop="$emit('action', application)"
       >
         <span>{{ computedActionLabel }}</span>

@@ -1,21 +1,27 @@
 <template>
-  <Card class="hover:shadow-md transition-shadow border">
-    <CardContent class="p-5">
-      <div class="flex items-center justify-between mb-3">
-        <span class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          {{ label }}
-        </span>
-        <span class="flex items-center justify-center w-9 h-9 rounded-lg" :class="iconBgClass">
-          <Icon :icon="icon" class="text-lg" :class="iconColorClass" />
-        </span>
-      </div>
-
-      <div class="text-3xl font-bold tracking-tight" :class="valueClass">
-        {{ animatedValue }}
-      </div>
-
-      <div v-if="subtitle" class="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
-        <span>{{ subtitle }}</span>
+  <Card
+    class="relative overflow-hidden transition-all duration-200 hover:shadow-md"
+    :class="cardBorderClass"
+  >
+    <CardContent class="p-4">
+      <div class="flex items-start justify-between">
+        <div class="flex flex-col gap-1">
+          <span class="text-[12px] font-medium text-gray-500 uppercase tracking-wide">
+            {{ label }}
+          </span>
+          <span class="text-2xl font-bold tracking-tight" :class="valueColorClass">
+            {{ animatedValue }}
+          </span>
+          <span v-if="subtitle" class="text-[11px] text-gray-400 mt-0.5">
+            {{ subtitle }}
+          </span>
+        </div>
+        <div
+          class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+          :class="iconBgClass"
+        >
+          <Icon :icon="icon" class="text-xl" :class="iconColorClass" />
+        </div>
       </div>
     </CardContent>
   </Card>
@@ -26,40 +32,51 @@ import { ref, watch, onMounted, computed } from 'vue'
 import { Card, CardContent } from '@/components/ui/card'
 import { Icon } from '@iconify/vue'
 
-const props = withDefaults(defineProps<{
-  value: number
-  label: string
-  icon: string
-  subtitle?: string
-  variant?: 'default' | 'primary' | 'success' | 'warning' | 'danger'
-}>(), {
-  variant: 'default',
-})
+const props = withDefaults(
+  defineProps<{
+    value: number
+    label: string
+    icon: string
+    subtitle?: string
+    variant?: 'default' | 'primary' | 'success' | 'warning' | 'danger'
+  }>(),
+  {
+    variant: 'default',
+  }
+)
 
 const animatedValue = ref(0)
 
-const valueClass = computed(() => ({
-  'text-foreground': props.variant === 'default',
-  'text-primary': props.variant === 'primary',
-  'text-emerald-600 dark:text-emerald-400': props.variant === 'success',
-  'text-amber-600 dark:text-amber-400': props.variant === 'warning',
-  'text-red-600 dark:text-red-400': props.variant === 'danger',
+const cardBorderClass = computed(() => ({
+  'border-gray-200': props.variant === 'default',
+  'border-blue-200': props.variant === 'primary',
+  'border-emerald-200': props.variant === 'success',
+  'border-amber-200': props.variant === 'warning',
+  'border-red-200': props.variant === 'danger',
+}))
+
+const valueColorClass = computed(() => ({
+  'text-gray-900': props.variant === 'default',
+  'text-blue-600': props.variant === 'primary',
+  'text-emerald-600': props.variant === 'success',
+  'text-amber-600': props.variant === 'warning',
+  'text-red-600': props.variant === 'danger',
 }))
 
 const iconColorClass = computed(() => ({
-  'text-muted-foreground': props.variant === 'default',
-  'text-primary': props.variant === 'primary',
-  'text-emerald-600 dark:text-emerald-400': props.variant === 'success',
-  'text-amber-600 dark:text-amber-400': props.variant === 'warning',
-  'text-red-600 dark:text-red-400': props.variant === 'danger',
+  'text-gray-500': props.variant === 'default',
+  'text-blue-500': props.variant === 'primary',
+  'text-emerald-500': props.variant === 'success',
+  'text-amber-500': props.variant === 'warning',
+  'text-red-500': props.variant === 'danger',
 }))
 
 const iconBgClass = computed(() => ({
-  'bg-muted': props.variant === 'default',
-  'bg-primary/10': props.variant === 'primary',
-  'bg-emerald-500/10': props.variant === 'success',
-  'bg-amber-500/10': props.variant === 'warning',
-  'bg-red-500/10': props.variant === 'danger',
+  'bg-gray-100': props.variant === 'default',
+  'bg-blue-50': props.variant === 'primary',
+  'bg-emerald-50': props.variant === 'success',
+  'bg-amber-50': props.variant === 'warning',
+  'bg-red-50': props.variant === 'danger',
 }))
 
 function animateValue(target: number) {
@@ -77,5 +94,8 @@ function animateValue(target: number) {
 }
 
 onMounted(() => animateValue(props.value))
-watch(() => props.value, (v) => animateValue(v))
+watch(
+  () => props.value,
+  (v) => animateValue(v)
+)
 </script>
