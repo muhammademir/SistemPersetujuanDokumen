@@ -33,6 +33,10 @@ class ApplicationController extends Controller
             ->status($request->query('status'))
             ->search($request->query('search'));
 
+        if ($request->filled('document_type') && $request->query('document_type') !== 'all') {
+            $query->where('document_type', $request->query('document_type'));
+        }
+
         // Pemohon hanya dapat melihat permohonan miliknya
         if ($user->hasRole('pemohon')) {
             $query->where('applicant_id', $user->id);

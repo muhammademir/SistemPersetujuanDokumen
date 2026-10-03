@@ -14,7 +14,7 @@
         variant="secondary"
         class="text-[12px] font-semibold px-3 py-1.5 self-start sm:self-auto bg-gray-100 text-gray-600"
       >
-        Total Riwayat: {{ historyReviews.length }}
+        Total Riwayat: {{ totalHistory }}
       </Badge>
     </div>
 
@@ -43,9 +43,17 @@
               </TableRow>
             </TableHeader>
             <TableBody>
-              <template v-if="paginatedReviews.length">
+              <TableRow v-if="loading">
+                <TableCell colspan="5" class="h-32 text-center">
+                  <div class="flex flex-col items-center justify-center text-gray-400 text-xs gap-2 py-4">
+                    <Loader2 class="w-6 h-6 animate-spin text-[#3b49f5]" />
+                    <span>Memuat riwayat penilaian...</span>
+                  </div>
+                </TableCell>
+              </TableRow>
+              <template v-else-if="historyReviews.length">
                 <TableRow
-                  v-for="data in paginatedReviews"
+                  v-for="data in historyReviews"
                   :key="data.id"
                   class="hover:bg-gray-50/50"
                 >
@@ -103,9 +111,9 @@
                 </TableRow>
               </template>
               <TableRow v-else>
-                <TableCell colspan="5" class="h-44 text-center">
+                <TableCell colspan="5" class="h-40 text-center">
                   <div
-                    class="flex flex-col items-center justify-center text-gray-400 text-xs gap-2 py-8"
+                    class="flex flex-col items-center justify-center text-gray-400 text-xs gap-2 py-4"
                   >
                     <History class="w-10 h-10 mb-1" />
                     <h3 class="text-[14px] font-bold text-gray-700">
@@ -124,22 +132,22 @@
 
         <!-- Pagination Controls -->
         <div
-          v-if="historyReviews.length > itemsPerPage"
+          v-if="totalHistory > 0"
           class="flex items-center justify-between p-4 border-t border-gray-100 text-[12px] text-gray-500"
         >
           <span>
             Menampilkan
             {{ (currentPage - 1) * itemsPerPage + 1 }} -
-            {{ Math.min(currentPage * itemsPerPage, historyReviews.length) }} dari
-            {{ historyReviews.length }} riwayat
+            {{ Math.min(currentPage * itemsPerPage, totalHistory) }} dari
+            {{ totalHistory }} riwayat
           </span>
           <div class="flex items-center gap-1.5">
             <Button
               variant="outline"
               size="icon"
               class="h-7 w-7 border-gray-200"
-              :disabled="currentPage <= 1"
-              @click="currentPage--"
+              :disabled="currentPage <= 1 || loading"
+              @click="goToPage(currentPage - 1)"
             >
               <ChevronLeft class="w-3.5 h-3.5" />
             </Button>
@@ -148,8 +156,8 @@
               variant="outline"
               size="icon"
               class="h-7 w-7 border-gray-200"
-              :disabled="currentPage >= totalPages"
-              @click="currentPage++"
+              :disabled="currentPage >= totalPages || loading"
+              @click="goToPage(currentPage + 1)"
             >
               <ChevronRight class="w-3.5 h-3.5" />
             </Button>
@@ -167,7 +175,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -179,7 +187,7 @@ import {
   TableRow,
   TableCell,
 } from '@/components/ui/table'
-import { Eye, History, ChevronLeft, ChevronRight } from 'lucide-vue-next'
+import { Eye, History, ChevronLeft, ChevronRight, Loader2 } from 'lucide-vue-next'
 import api from '@/plugins/axios'
 import { useDocumentStore } from '@/stores/document'
 import ApplicationDetailModal from '@/components/ApplicationDetailModal.vue'
@@ -195,26 +203,30 @@ const selectedApplication = ref<Application | null>(null)
 
 const currentPage = ref(1)
 const itemsPerPage = ref(10)
+const totalHistory = ref(0)
+const totalPages = ref(1)
 
-const totalPages = computed(
-  () => Math.ceil(historyReviews.value.length / itemsPerPage.value) || 1
-)
-
-const paginatedReviews = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage.value
-  return historyReviews.value.slice(start, start + itemsPerPage.value)
-})
-
-async function fetchHistory() {
+async function fetchHistory(page = 1) {
   loading.value = true
   try {
-    const res = await api.get('/reviews/history')
-    historyReviews.value = res.data?.data ?? res.data ?? []
+    const res = await api.get('/reviews/history', {
+      params: { page, per_page: itemsPerPage.value },
+    })
+    const data = res.data
+    historyReviews.value = data?.data ?? data ?? []
+    totalHistory.value = data?.total ?? historyReviews.value.length
+    totalPages.value = data?.last_page ?? 1
+    currentPage.value = data?.current_page ?? page
   } catch (e) {
     console.error('Failed to load history', e)
   } finally {
     loading.value = false
   }
+}
+
+function goToPage(page: number) {
+  if (page < 1 || page > totalPages.value) return
+  fetchHistory(page)
 }
 
 async function viewAppDetail(appId: number) {
@@ -237,6 +249,6 @@ function getDecisionBadgeClass(dec: string): string {
 }
 
 onMounted(() => {
-  fetchHistory()
+  fetchHistory(1)
 })
 </script>

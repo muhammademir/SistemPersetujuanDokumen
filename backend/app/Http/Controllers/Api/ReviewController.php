@@ -36,10 +36,11 @@ class ReviewController extends Controller
 
     public function history(Request $request)
     {
+        $perPage = max(1, min((int) $request->query('per_page', 10), 100));
         $reviews = ApplicationReview::with('application', 'reviewer')
             ->where('reviewer_id', $request->user()->id)
             ->latest('reviewed_at')
-            ->paginate();
+            ->paginate($perPage);
 
         return response()->json($reviews);
     }

@@ -256,7 +256,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -344,6 +344,32 @@ const filteredApplications = computed(() => {
       app.document_type === selectedType.value
     return matchesStatus && matchesSearch && matchesType
   })
+})
+
+async function loadPemohonApplications() {
+  const params: Record<string, string> = { per_page: '50' }
+  if (activeStatusFilter.value && activeStatusFilter.value !== 'all') {
+    params.status = activeStatusFilter.value
+  }
+  if (selectedType.value && selectedType.value !== 'all') {
+    params.document_type = selectedType.value
+  }
+  if (searchQuery.value.trim()) {
+    params.search = searchQuery.value.trim()
+  }
+  await docStore.fetchApplications(params)
+}
+
+let searchTimeout: any = null
+watch(searchQuery, () => {
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    loadPemohonApplications()
+  }, 300)
+})
+
+watch([activeStatusFilter, selectedType], () => {
+  loadPemohonApplications()
 })
 
 const chartSeries = computed(() => [

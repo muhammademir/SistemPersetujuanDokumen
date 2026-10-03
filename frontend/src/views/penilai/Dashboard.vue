@@ -255,9 +255,17 @@
               </TableRow>
             </TableHeader>
             <TableBody>
-              <template v-if="paginatedApplications.length">
+              <TableRow v-if="tableLoading">
+                <TableCell colspan="5" class="h-32 text-center">
+                  <div class="flex flex-col items-center justify-center text-gray-400 text-xs gap-2 py-4">
+                    <Loader2 class="w-6 h-6 animate-spin text-[#3b49f5]" />
+                    <span>Memuat data permohonan...</span>
+                  </div>
+                </TableCell>
+              </TableRow>
+              <template v-else-if="tableApplications.length">
                 <TableRow
-                  v-for="data in paginatedApplications"
+                  v-for="data in tableApplications"
                   :key="data.id"
                   class="hover:bg-gray-50/50"
                 >
@@ -349,32 +357,32 @@
 
         <!-- Pagination Controls -->
         <div
-          v-if="filteredApplications.length > itemsPerPage"
+          v-if="tableTotal > 0"
           class="flex items-center justify-between pt-4 text-[12px] text-gray-500"
         >
           <span>
             Menampilkan
-            {{ (currentPage - 1) * itemsPerPage + 1 }} -
-            {{ Math.min(currentPage * itemsPerPage, filteredApplications.length) }} dari
-            {{ filteredApplications.length }} permohonan
+            {{ (tableCurrentPage - 1) * itemsPerPage + 1 }} -
+            {{ Math.min(tableCurrentPage * itemsPerPage, tableTotal) }} dari
+            {{ tableTotal }} permohonan
           </span>
           <div class="flex items-center gap-1.5">
             <Button
               variant="outline"
               size="icon"
               class="h-7 w-7 border-gray-200"
-              :disabled="currentPage <= 1"
-              @click="currentPage--"
+              :disabled="tableCurrentPage <= 1 || tableLoading"
+              @click="goToPage(tableCurrentPage - 1)"
             >
               <ChevronLeft class="w-3.5 h-3.5" />
             </Button>
-            <span class="px-2 font-medium">{{ currentPage }} / {{ totalPages }}</span>
+            <span class="px-2 font-medium">{{ tableCurrentPage }} / {{ tableLastPage }}</span>
             <Button
               variant="outline"
               size="icon"
               class="h-7 w-7 border-gray-200"
-              :disabled="currentPage >= totalPages"
-              @click="currentPage++"
+              :disabled="tableCurrentPage >= tableLastPage || tableLoading"
+              @click="goToPage(tableCurrentPage + 1)"
             >
               <ChevronRight class="w-3.5 h-3.5" />
             </Button>
@@ -401,7 +409,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -433,7 +441,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  Loader2,
 } from 'lucide-vue-next'
+import api from '@/plugins/axios'
 import { useDocumentStore } from '@/stores/document'
 import StatCard from '@/components/StatCard.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
@@ -452,6 +462,12 @@ const alertMessage = ref('')
 
 const currentPage = ref(1)
 const itemsPerPage = ref(10)
+
+const tableApplications = ref<Application[]>([])
+const tableTotal = ref(0)
+const tableCurrentPage = ref(1)
+const tableLastPage = ref(1)
+const tableLoading = ref(false)
 
 const showDetailModal = ref(false)
 const selectedApplication = ref<Application | null>(null)
@@ -486,30 +502,59 @@ const filterTabs = computed(() => [
   { label: 'Ditolak', value: 'rejected', count: docStore.stats.rejected },
 ])
 
-const filteredApplications = computed(() => {
-  const query = searchQuery.value.trim().toLowerCase()
-  return docStore.applications.filter((app) => {
-    const statusVal = getStatusValue(app.status)
-    const matchesStatus =
-      activeStatusFilter.value === 'all' || statusVal === activeStatusFilter.value
-    const matchesType =
-      selectedType.value === 'all' || !selectedType.value || app.document_type === selectedType.value
-    const matchesSearch =
-      !query ||
-      app.title.toLowerCase().includes(query) ||
-      app.code.toLowerCase().includes(query) ||
-      (app.applicant?.name && app.applicant.name.toLowerCase().includes(query))
-    return matchesStatus && matchesSearch && matchesType
-  })
+async function loadTableApplications() {
+  tableLoading.value = true
+  try {
+    const params: Record<string, any> = {
+      page: currentPage.value,
+      per_page: itemsPerPage.value,
+    }
+    if (activeStatusFilter.value && activeStatusFilter.value !== 'all') {
+      params.status = activeStatusFilter.value
+    }
+    if (selectedType.value && selectedType.value !== 'all') {
+      params.document_type = selectedType.value
+    }
+    if (searchQuery.value.trim()) {
+      params.search = searchQuery.value.trim()
+    }
+
+    const response = await api.get('/applications', { params })
+    const data = response.data
+    tableApplications.value = data.data ?? data ?? []
+    if (data.meta) {
+      tableTotal.value = data.meta.total
+      tableCurrentPage.value = data.meta.current_page
+      tableLastPage.value = data.meta.last_page
+    } else {
+      tableTotal.value = tableApplications.value.length
+      tableLastPage.value = 1
+    }
+  } catch (err) {
+    console.error('Failed to load table applications', err)
+  } finally {
+    tableLoading.value = false
+  }
+}
+
+function goToPage(page: number) {
+  if (page < 1 || page > tableLastPage.value) return
+  currentPage.value = page
+  loadTableApplications()
+}
+
+let searchTimeout: any = null
+watch(searchQuery, () => {
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    currentPage.value = 1
+    loadTableApplications()
+  }, 300)
 })
 
-const totalPages = computed(
-  () => Math.ceil(filteredApplications.value.length / itemsPerPage.value) || 1
-)
-
-const paginatedApplications = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage.value
-  return filteredApplications.value.slice(start, start + itemsPerPage.value)
+watch([activeStatusFilter, selectedType], () => {
+  currentPage.value = 1
+  loadTableApplications()
 })
 
 const chartDataTotal = computed(() => {
@@ -589,14 +634,22 @@ async function handleReviewSubmit(payload: { decision: string; note: string }) {
     showReviewModal.value = false
     reviewTargetApp.value = null
 
-    await Promise.all([docStore.fetchDashboard(), docStore.fetchApplications()])
+    await Promise.all([
+      docStore.fetchDashboard(),
+      docStore.fetchApplications(),
+      loadTableApplications(),
+    ])
   } catch {
     // Handled in store
   }
 }
 
 onMounted(async () => {
-  await Promise.all([docStore.fetchDashboard(), docStore.fetchApplications()])
+  await Promise.all([
+    docStore.fetchDashboard(),
+    docStore.fetchApplications(),
+    loadTableApplications(),
+  ])
   setTimeout(() => {
     chartReady.value = true
   }, 200)

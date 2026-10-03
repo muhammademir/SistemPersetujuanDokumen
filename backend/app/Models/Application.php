@@ -56,11 +56,25 @@ public function statusLogs(): HasMany
 // Query scope untuk filter
 public function scopeStatus($query, ?string $status)
 {
-    return $query->when($status, fn ($q) => $q->where('status', $status));
+    return $query->when($status && $status !== 'all', function ($q) use ($status) {
+        if (str_contains($status, ',')) {
+            $statuses = array_filter(explode(',', $status));
+            $q->whereIn('status', $statuses);
+        } else {
+            $q->where('status', $status);
+        }
+    });
 }
 
 public function scopeSearch($query, ?string $term)
 {
-    return $query->when($term, fn ($q) => $q->where('title', 'ilike', "%{$term}%"));
+    return $query->when($term, function ($q) use ($term) {
+        $term = trim($term);
+        $q->where(function ($sub) use ($term) {
+            $sub->where('title', 'ilike', "%{$term}%")
+                ->orWhere('code', 'ilike', "%{$term}%")
+                ->orWhereHas('applicant', fn ($u) => $u->where('name', 'ilike', "%{$term}%"));
+        });
+    });
 }
 }

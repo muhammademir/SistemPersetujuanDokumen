@@ -60,15 +60,31 @@ export const useDocumentStore = defineStore('document', () => {
     }
   })
 
-  const pendingApplications = computed(() =>
-    applications.value.filter(a => ['submitted', 'under_review'].includes(a.status.value))
-  )
+  const pendingList = ref<Application[]>([])
+
+  const pendingApplications = computed(() => {
+    if (pendingList.value.length > 0) return pendingList.value
+    const getStatusVal = (app: Application) =>
+      typeof app.status === 'object' && app.status ? app.status.value : (app.status as any)
+    return applications.value.filter(a => ['submitted', 'under_review'].includes(getStatusVal(a)))
+  })
 
   const recentApplications = computed(() =>
     [...applications.value]
       .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
       .slice(0, 10)
   )
+
+  async function fetchPendingApplications() {
+    try {
+      const response = await api.get('/applications', {
+        params: { status: 'submitted,under_review', per_page: 20 },
+      })
+      pendingList.value = response.data?.data ?? response.data ?? []
+    } catch {
+      // ignore
+    }
+  }
 
   async function fetchDashboard() {
     try {
@@ -77,6 +93,7 @@ export const useDocumentStore = defineStore('document', () => {
     } catch {
       // Silently fail, stats will use fallback
     }
+    fetchPendingApplications()
   }
 
   async function fetchApplications(params?: Record<string, string>) {
